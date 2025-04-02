@@ -1,0 +1,555 @@
+/**
+ * 2007-2025 PrestaShop SA y Contribuidores
+ *
+ * AVISO DE LICENCIA
+ *
+ * Este código fuente está protegido por derechos de autor.
+ * El uso está permitido bajo licencia.
+ *
+ * @author    PrestaShop SA <contacto@prestashop.com>
+ * @copyright 2007-2025 PrestaShop SA y Contribuidores
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License 3.0 (AFL-3.0)
+ */
+
+/* Estilos generales de la interfaz */
+.panel-heading {
+    background: #f8f8f8;
+    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+}
+
+.panel-footer {
+    background: #f8f8f8;
+    border-top: 1px solid #eee;
+    padding: 15px 20px;
+}
+
+/* Acordeón para el panel de configuración */
+#module-configuration-panel {
+    position: relative;
+}
+
+.panel-heading-action {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.accordion-toggle {
+    cursor: pointer;
+    display: block;
+    padding: 10px 15px;
+    background-color: #f5f8f9;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #363a41;
+    text-decoration: none !important;
+    position: relative;
+}
+
+.accordion-toggle:after {
+    content: "\f078"; /* FontAwesome chevron down */
+    font-family: FontAwesome;
+    position: absolute;
+    right: 15px;
+    transition: all 0.3s ease;
+}
+
+.accordion-toggle.collapsed:after {
+    transform: rotate(-90deg);
+}
+
+.accordion-toggle:hover {
+    background-color: #e9eeef;
+    text-decoration: none;
+}
+
+.accordion-heading {
+    margin-bottom: 15px;
+}
+
+.accordion-content {
+    padding: 15px;
+    border: 1px solid #dbe6e9;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+/* Tabla de imágenes del slider */
+.slider-image-list {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+.slider-image-list th,
+.slider-image-list td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.slider-image-list th {
+    background-color: #f5f8f9;
+    font-weight: bold;
+    border-bottom: 2px solid #dbe6e9;
+}
+
+.slider-image-list tbody tr {
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+
+.slider-image-list tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Estilos para imágenes en admin */
+.img-responsive {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.img-thumbnail {
+    max-height: 150px;
+    width: auto;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.img-thumbnail:hover {
+    transform: scale(1.05);
+}
+
+/* Drag & drop para ordenamiento */
+.sortable-images tr {
+    cursor: move;
+}
+
+.sortable-images tr.ui-sortable-helper {
+    background-color: #f8f8f8;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+.sortable-images tr.ui-sortable-placeholder {
+    background-color: #e9eeef;
+    visibility: visible !important;
+    border: 2px dashed #25b9d7;
+    height: 60px;
+}
+
+.position-handle {
+    cursor: move;
+    text-align: center;
+    padding: 8px;
+    background-color: #f5f8f9;
+    border-radius: 4px;
+}
+
+.position-handle:hover {
+    background-color: #e9eeef;
+}
+
+.position-display {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 5px;
+    color: #363a41;
+}
+
+/* Dropzone para subir imágenes */
+.dropzone {
+    border: 2px dashed #25b9d7;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    background-color: #f5f8f9;
+}
+
+.dropzone:hover, .dropzone-active {
+    border-color: #1a8ca6;
+    background-color: #e9eeef;
+}
+
+.dropzone .icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #25b9d7;
+}
+
+.dropzone:hover .icon {
+    color: #1a8ca6;
+}
+
+.dropzone-message {
+    color: #6c868e;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.dropzone-info {
+    color: #6c868e;
+    font-size: 13px;
+}
+
+/* Preview de imágenes */
+.preview-box {
+    border: 1px solid #dbe6e9;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    margin-top: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preview-title {
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-align: center;
+    color: #363a41;
+}
+
+.image-preview-container .panel {
+    margin-bottom: 15px;
+    border: 1px solid #dbe6e9;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.image-preview-container .panel-heading {
+    font-weight: bold;
+    text-align: center;
+    background-color: #f5f8f9;
+    padding: 10px;
+    border-bottom: 1px solid #dbe6e9;
+    color: #363a41;
+}
+
+/* Botones y acciones */
+.btn-add-image {
+    margin-bottom: 15px;
+    background-color: #25b9d7;
+    border-color: #25b9d7;
+    color: #fff;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-add-image:hover, .btn-add-image:focus {
+    background-color: #1a8ca6;
+    border-color: #1a8ca6;
+    color: #fff;
+}
+
+.btn-group-action {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.btn-group-action .btn {
+    margin-right: 0;
+    border-radius: 4px;
+}
+
+.btn-edit-image {
+    background-color: #5cb85c;
+    border-color: #5cb85c;
+    color: #fff;
+}
+
+.btn-edit-image:hover, .btn-edit-image:focus {
+    background-color: #4cae4c;
+    border-color: #4cae4c;
+    color: #fff;
+}
+
+/* Estado activo/inactivo */
+.list-action-enable {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 18px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.list-action-enable.action-enabled {
+    background-color: #5cb85c;
+}
+
+.list-action-enable.action-disabled {
+    background-color: #d9534f;
+}
+
+.list-action-enable:hover {
+    transform: scale(1.1);
+}
+
+/* Estilo para los tabs */
+.nav-tabs {
+    border-bottom: 2px solid #25b9d7;
+    margin-bottom: 15px;
+}
+
+.nav-tabs > li > a {
+    margin-right: 2px;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0;
+    color: #6c868e;
+    font-weight: normal;
+    padding: 10px 15px;
+}
+
+.nav-tabs > li > a:hover {
+    border-color: #eee #eee #ddd;
+    background-color: #f9f9f9;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+    color: #363a41;
+    border: 1px solid #ddd;
+    border-bottom-color: transparent;
+    font-weight: bold;
+    background-color: #fff;
+}
+
+.tab-content {
+    padding: 15px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+/* Formulario de imagen */
+.slider-image-form {
+    margin-top: 20px;
+}
+
+.slider-image-form .form-group {
+    margin-bottom: 15px;
+}
+
+.slider-image-form .help-block {
+    color: #6c868e;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.slider-image-form .input-group-addon {
+    background-color: #f5f8f9;
+    border-color: #dbe6e9;
+}
+
+.slider-image-form label {
+    font-weight: 600;
+    color: #363a41;
+}
+
+.slider-image-form .form-control {
+    border-color: #dbe6e9;
+    box-shadow: none;
+    height: 40px;
+}
+
+.slider-image-form textarea.form-control {
+    height: auto;
+}
+
+.slider-image-form .form-control:focus {
+    border-color: #25b9d7;
+    box-shadow: 0 0 0 0.2rem rgba(37, 185, 215, 0.25);
+}
+
+/* Selector de archivos personalizado */
+.file-selector {
+    margin-bottom: 15px;
+}
+
+.file-selector input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.file-selector label {
+    display: inline-block;
+    cursor: pointer;
+    padding: 8px 16px;
+    color: #fff;
+    background-color: #25b9d7;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.file-selector label:hover {
+    background-color: #1a8ca6;
+}
+
+.file-selector label i {
+    margin-right: 5px;
+}
+
+/* Vista previa en tiempo real */
+.live-preview {
+    border: 1px solid #dbe6e9;
+    border-radius: 4px;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #f5f8f9;
+}
+
+.live-preview-title {
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+    color: #363a41;
+}
+
+.live-preview-container {
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .slider-image-list th,
+    .slider-image-list td {
+        padding: 10px;
+    }
+    
+    .img-thumbnail {
+        max-height: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .slider-image-list th,
+    .slider-image-list td {
+        padding: 8px;
+    }
+    
+    .img-thumbnail {
+        max-height: 100px;
+    }
+    
+    .slider-image-list .btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+}
+
+/* Mejoras visuales */
+.version-info {
+    font-size: 12px;
+    color: #6c868e;
+    text-align: right;
+    margin-top: 5px;
+}
+
+.panel-description {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f5f8f9;
+    border-radius: 4px;
+    color: #363a41;
+}
+
+.panel-description p {
+    margin-bottom: 10px;
+}
+
+.panel-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Tooltip personalizado */
+.sr-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.sr-tooltip .sr-tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: #363a41;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+.sr-tooltip .sr-tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #363a41 transparent transparent transparent;
+}
+
+.sr-tooltip:hover .sr-tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Mejora visual para el drag & drop */
+.drag-handle-icon {
+    font-size: 16px;
+    color: #6c868e;
+}
+
+.drag-instruction {
+    display: block;
+    font-size: 11px;
+    color: #6c868e;
+    margin-top: 5px;
+}
+
+/* Estilo para estado en proceso de ordenamiento */
+.sortable-images.sorting {
+    border: 1px dashed #25b9d7;
+    border-radius: 4px;
+}
+
+/* Estilos para mensaje de carga */
+#loading-message {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    padding: 15px 20px;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

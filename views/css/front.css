@@ -1,0 +1,287 @@
+/**
+ * 2007-2025 PrestaShop SA y Contribuidores
+ *
+ * AVISO DE LICENCIA
+ *
+ * Este código fuente está protegido por derechos de autor.
+ * El uso está permitido bajo licencia.
+ *
+ * @author    PrestaShop SA <contacto@prestashop.com>
+ * @copyright 2007-2025 PrestaShop SA y Contribuidores
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License 3.0 (AFL-3.0)
+ */
+
+/* Contenedor principal del slider */
+.slider-responsivo {
+    position: relative;
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor de slides */
+.slider-responsivo .slides-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 200px; /* Altura mínima para evitar colapsos */
+}
+
+/* Slides individuales */
+.slider-responsivo .slide {
+    position: relative;
+    width: 100%;
+    height: auto;
+    display: none; /* Oculto por defecto */
+    opacity: 0;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    overflow: hidden;
+}
+
+.slider-responsivo .slide.active {
+    display: block; /* Mostrar cuando está activo */
+    opacity: 1;
+    z-index: 5;
+}
+
+/* Enlace que envuelve toda la imagen */
+.slider-responsivo .slide-link-wrapper {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Imágenes dentro de los slides */
+.slider-responsivo .slide img, 
+.slider-responsivo .slide-link-wrapper img {
+    width: 100%;
+    height: auto; /* Auto height para mantener proporciones */
+    display: block;
+}
+
+/* Controles de navegación (flechas) */
+.slider-responsivo .slider-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #333;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    opacity: 0.7;
+}
+
+.slider-responsivo .slider-control:hover {
+    background-color: rgba(255, 255, 255, 0.95);
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+}
+
+.slider-responsivo .slider-control.prev {
+    left: 20px;
+}
+
+.slider-responsivo .slider-control.next {
+    right: 20px;
+}
+
+/* Paginación (dots) */
+.slider-responsivo .slider-pagination {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+}
+
+.slider-responsivo .slider-dot {
+    width: 12px;
+    height: 12px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    margin: 0 5px;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.slider-responsivo .slider-dot.active {
+    background-color: #fff;
+    transform: scale(1.2);
+}
+
+.slider-responsivo .slider-dot:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+}
+
+/* Efectos de transición */
+
+/* 1. Efecto Slide */
+.slider-responsivo .slide.slide-left {
+    transform: translateX(-100%);
+}
+
+.slider-responsivo .slide.slide-right {
+    transform: translateX(100%);
+}
+
+.slider-responsivo .slide.slide-from-left {
+    transform: translateX(-100%);
+}
+
+.slider-responsivo .slide.slide-from-right {
+    transform: translateX(100%);
+}
+
+.slider-responsivo .slide.active.slide-from-left,
+.slider-responsivo .slide.active.slide-from-right {
+    transform: translateX(0);
+}
+
+/* 2. Efecto Fade */
+.slider-responsivo .slide.fade-out {
+    opacity: 0;
+}
+
+.slider-responsivo .slide.fade-in {
+    opacity: 0;
+}
+
+.slider-responsivo .slide.active.fade-in {
+    opacity: 1;
+}
+
+/* 3. Efecto Zoom */
+.slider-responsivo .slide.zoom-out {
+    transform: scale(1.2);
+    opacity: 0;
+}
+
+.slider-responsivo .slide.zoom-in {
+    transform: scale(0.8);
+    opacity: 0;
+}
+
+.slider-responsivo .slide.active.zoom-in {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Accesibilidad y enfoque */
+.slider-responsivo .slider-control:focus,
+.slider-responsivo .slider-dot:focus {
+    outline: 2px solid #2fb5d2;
+    outline-offset: 2px;
+}
+
+/* Mejoras de accesibilidad */
+.slider-responsivo .slider-control span {
+    clip: rect(1px, 1px, 1px, 1px);
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    position: absolute;
+}
+
+.slider-responsivo .slider-control:before {
+    font-family: "Material Icons", "FontAwesome";
+    font-size: 24px;
+    line-height: 1;
+}
+
+.slider-responsivo .slider-control.prev:before {
+    content: "❮";
+}
+
+.slider-responsivo .slider-control.next:before {
+    content: "❯";
+}
+
+/* Media queries para responsividad */
+@media (max-width: 992px) {
+    .slider-responsivo .slider-control {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .slider-responsivo .slider-control {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .slider-responsivo .slider-control.prev {
+        left: 10px;
+    }
+    
+    .slider-responsivo .slider-control.next {
+        right: 10px;
+    }
+    
+    .slider-responsivo .slider-pagination {
+        bottom: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .slider-responsivo .slider-control {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .slider-responsivo .slider-dot {
+        width: 10px;
+        height: 10px;
+        margin: 0 3px;
+    }
+    
+    .slider-responsivo .slider-pagination {
+        bottom: 8px;
+    }
+}
+
+/* Efectos de hover */
+.slider-responsivo:hover .slider-control {
+    opacity: 0.9;
+}
+
+/* Animación de carga */
+.slider-responsivo.loading .slides-container:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #2fb5d2;
+    border-radius: 50%;
+    animation: slider-loading 1s infinite linear;
+    z-index: 20;
+}
+
+@keyframes slider-loading {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
