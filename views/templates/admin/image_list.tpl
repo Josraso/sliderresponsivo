@@ -170,7 +170,7 @@
                         {foreach from=$languages item=language name=languages}
                             <li role="presentation" class="{if $language.id_lang == $default_lang}active{/if}">
                                 <a href="#lang-{$language.id_lang}" aria-controls="lang-{$language.id_lang}" role="tab" data-toggle="tab">
-                                    <img src="../img/l/{$language.id_lang}.jpg" alt="{$language.name}" /> {$language.name}
+                                    <img src="{$link->getBaseLink()|escape:'html':'UTF-8'}img/l/{$language.id_lang}.jpg" alt="{$language.name}" /> {$language.name}
                                     <span class="lang-tab-status" data-lang="{$language.id_lang}"></span>
                                 </a>
                             </li>
