@@ -16,17 +16,16 @@
     background: #f8f8f8;
     border-bottom: 1px solid #eee;
     padding: 15px 20px;
+    /* Necesario para que .panel-heading-action (position: absolute) se
+       coloque siempre respecto a esta cabecera, sin depender de que un ID
+       concreto exista en el DOM. */
+    position: relative;
 }
 
 .panel-footer {
     background: #f8f8f8;
     border-top: 1px solid #eee;
     padding: 15px 20px;
-}
-
-/* Acordeón para el panel de configuración */
-#module-configuration-panel {
-    position: relative;
 }
 
 .panel-heading-action {

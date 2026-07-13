@@ -120,7 +120,7 @@
                                     <div class="btn-group-action">
                                         <a href="javascript:void(0)" class="btn btn-default btn-edit-image" data-id="{$image.id_image}" title="{l s='Editar' mod='sliderresponsivo'}">
                                             <i class="icon-pencil"></i> {l s='Editar' mod='sliderresponsivo'}
-                                        <a href="{$current_url}&deleteImage=1&id_image={$image.id_image}&token={$token}" class="btn btn-danger btn-delete-image" title="{l s='Eliminar' mod='sliderresponsivo'}">
+                                        <a href="{$current_url}&deleteImage=1&id_image={$image.id_image}" class="btn btn-danger btn-delete-image" title="{l s='Eliminar' mod='sliderresponsivo'}">
     <i class="icon-trash"></i> {l s='Eliminar' mod='sliderresponsivo'}
 </a>
                                     </div>
@@ -142,7 +142,6 @@
                 <div class="panel-body">
                     <input type="hidden" name="submitImage" value="1" />
                     <input type="hidden" name="id_image" id="id_image" value="0" />
-                    <input type="hidden" name="token" value="{$token|escape:'html':'UTF-8'}" />
                     
                     <div class="form-group">
                         <label for="image-url">{l s='URL de destino' mod='sliderresponsivo'}</label>

@@ -13,14 +13,12 @@
 
 var sliderResponsivoAdmin = window.sliderResponsivoAdmin || {
     currentUrl: '',
-    token: '',
     defaultLangId: 1,
     confirmDelete: '¿Está seguro que desea eliminar esta imagen? Esta acción no se puede deshacer.',
     i18n: {}
 };
 
 $(document).ready(function() {
-    setupConfigurationAccordion();
     initializeSortable();
     initializeImagePreview();
     initializeDropzone();
@@ -29,37 +27,6 @@ $(document).ready(function() {
     initializeRemoveLangImage();
     updateLangTabStatus();
 });
-
-/**
- * Configurar el panel de configuración como acordeón
- */
-function setupConfigurationAccordion() {
-    if ($('form[name="sliderresponsivo_form"]').length > 0) {
-        const $configPanel = $('form[name="sliderresponsivo_form"]').closest('.panel');
-        $configPanel.attr('id', 'module-configuration-panel');
-        $configPanel.find('.panel-heading').append('<span class="panel-heading-action"><a class="list-toolbar-btn toggle-config" href="#"><i class="icon-caret-down"></i></a></span>');
-
-        const $panelBody = $configPanel.find('.panel-body');
-        const $panelFooter = $configPanel.find('.panel-footer');
-        $panelBody.add($panelFooter).wrapAll('<div class="config-collapse" style="display:none;"></div>');
-
-        $('.toggle-config').on('click', function(e) {
-            e.preventDefault();
-            const $icon = $(this).find('i');
-            const $collapse = $('.config-collapse');
-
-            $collapse.slideToggle(300, function() {
-                if ($(this).is(':visible')) {
-                    $icon.removeClass('icon-caret-down').addClass('icon-caret-up');
-                } else {
-                    $icon.removeClass('icon-caret-up').addClass('icon-caret-down');
-                }
-            });
-        });
-
-        $configPanel.find('.panel-heading').append('<small style="margin-left:10px;color:#999;"> (Haga clic en la flecha para mostrar/ocultar la configuración)</small>');
-    }
-}
 
 /**
  * Inicializa la funcionalidad de ordenamiento
@@ -106,7 +73,7 @@ function updatePositions() {
     });
 
     $.ajax({
-        url: sliderResponsivoAdmin.currentUrl + '&updatePositions=1&token=' + sliderResponsivoAdmin.token,
+        url: sliderResponsivoAdmin.currentUrl + '&updatePositions=1',
         method: 'POST',
         data: {
             image_position: positions
@@ -229,7 +196,7 @@ function initializeFormHandling() {
         showLoadingMessage(sliderResponsivoAdmin.i18n.loading || 'Cargando datos de la imagen...');
 
         $.ajax({
-            url: sliderResponsivoAdmin.currentUrl + '&action=getImage&id_image=' + imageId + '&token=' + sliderResponsivoAdmin.token,
+            url: sliderResponsivoAdmin.currentUrl + '&action=getImage&id_image=' + imageId,
             method: 'GET',
             dataType: 'json',
             timeout: 20000,
@@ -298,7 +265,7 @@ function initializeFormHandling() {
         showLoadingMessage(sliderResponsivoAdmin.i18n.updatingStatus || 'Actualizando estado...');
 
         $.ajax({
-            url: sliderResponsivoAdmin.currentUrl + '&changeImageStatus=1&id_image=' + imageId + '&ajax=1&token=' + sliderResponsivoAdmin.token,
+            url: sliderResponsivoAdmin.currentUrl + '&changeImageStatus=1&id_image=' + imageId + '&ajax=1',
             method: 'POST',
             dataType: 'json',
             success: function(response) {

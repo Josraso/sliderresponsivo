@@ -36,7 +36,7 @@ class SliderResponsivo extends Module implements WidgetInterface
     {
         $this->name = 'sliderresponsivo';
         $this->tab = 'front_office_features';
-        $this->version = '1.2.1';
+        $this->version = '1.2.2';
         $this->author = 'PrestaShop';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -142,7 +142,6 @@ class SliderResponsivo extends Module implements WidgetInterface
             Media::addJsDef([
                 'sliderResponsivoAdmin' => [
                     'currentUrl' => $this->context->link->getAdminLink('AdminModules').'&configure='.$this->name,
-                    'token' => Tools::getAdminTokenLite('AdminModules'),
                     'defaultLangId' => (int)Configuration::get('PS_LANG_DEFAULT'),
                     'confirmDelete' => $this->l('¿Está seguro que desea eliminar esta imagen? Esta acción no se puede deshacer.'),
                     'i18n' => [
@@ -394,7 +393,6 @@ class SliderResponsivo extends Module implements WidgetInterface
         $this->context->smarty->assign([
             'module_dir' => $this->_path,
             'current_url' => $this->context->link->getAdminLink('AdminModules').'&configure='.$this->name,
-            'token' => Tools::getAdminTokenLite('AdminModules'),
             'SLIDERRESPONSIVO_WIDTH_DESKTOP' => Configuration::get('SLIDERRESPONSIVO_WIDTH_DESKTOP', null, null, null, $this->default_width_desktop),
             'SLIDERRESPONSIVO_HEIGHT_DESKTOP' => Configuration::get('SLIDERRESPONSIVO_HEIGHT_DESKTOP', null, null, null, $this->default_height_desktop),
             'SLIDERRESPONSIVO_WIDTH_MOBILE' => Configuration::get('SLIDERRESPONSIVO_WIDTH_MOBILE', null, null, null, $this->default_width_mobile),
@@ -980,7 +978,6 @@ class SliderResponsivo extends Module implements WidgetInterface
            'languages' => Language::getLanguages(false),
            'default_lang' => (int)Configuration::get('PS_LANG_DEFAULT'),
            'id_language' => $this->context->language->id,
-           'token' => Tools::getAdminTokenLite('AdminModules'),
            'module_version' => $this->version
        ]);
        
