@@ -411,24 +411,34 @@ class SliderResponsivo {
         // Eventos táctiles para swipe en móviles
         this.slider.addEventListener('touchstart', (e) => {
             this.touchStartX = e.changedTouches[0].screenX;
-            
+
             // Detener autoplay durante el toque
             if (this.config.autoplay) {
                 this.stopAutoplay();
             }
         }, { passive: true });
-        
+
         this.slider.addEventListener('touchend', (e) => {
             this.touchEndX = e.changedTouches[0].screenX;
             this.handleSwipe();
-            
+
             // Reiniciar autoplay después del toque
             if (this.config.autoplay) {
                 this.startAutoplay();
             }
         }, { passive: true });
-        
-        // También añadir soporte para ratón (arrastrar)
+
+        // Soporte de arrastre con ratón: solo en dispositivos con puntero fino.
+        // En pantallas táctiles, tras un touchend el navegador dispara un
+        // mousedown/click sintéticos; llamar aquí a preventDefault() en ese
+        // mousedown cancela el click sintético y bloquea el toque sobre
+        // enlaces dentro del slider (p. ej. slide-link-wrapper).
+        const hasCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const hasFinePointer = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
+        if (hasCoarsePointer && !hasFinePointer) {
+            return;
+        }
+
         this.slider.addEventListener('mousedown', (e) => {
             this.touchStartX = e.screenX;
             this.isDragging = true;

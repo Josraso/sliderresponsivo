@@ -24,6 +24,7 @@
     
     <div class="config-collapse" style="display:none;">
         <form id="module_form" class="defaultForm form-horizontal" action="{$current_url|escape:'html':'UTF-8'}" method="post" enctype="multipart/form-data" novalidate>
+            <input type="hidden" name="token" value="{$token|escape:'html':'UTF-8'}" />
             <div class="panel-body">
                 <div class="form-wrapper">
                     <div class="form-group">

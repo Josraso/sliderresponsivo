@@ -142,6 +142,7 @@
                 <div class="panel-body">
                     <input type="hidden" name="submitImage" value="1" />
                     <input type="hidden" name="id_image" id="id_image" value="0" />
+                    <input type="hidden" name="token" value="{$token|escape:'html':'UTF-8'}" />
                     
                     <div class="form-group">
                         <label for="image-url">{l s='URL de destino' mod='sliderresponsivo'}</label>
@@ -230,17 +231,62 @@
                                                         <input type="text" name="title_{$language.id_lang}" id="title_{$language.id_lang}" class="form-control" required />
                                                         <p class="help-block">{l s='Importante para SEO, no se muestra visiblemente sobre la imagen' mod='sliderresponsivo'}</p>
                                                     </div>
-                                                    
+
                                                     <div class="form-group">
                                                         <label for="description_{$language.id_lang}">{l s='Descripción' mod='sliderresponsivo'}</label>
                                                         <textarea name="description_{$language.id_lang}" id="description_{$language.id_lang}" class="form-control" rows="4"></textarea>
                                                         <p class="help-block">{l s='Descripción para SEO, no visible en el front-office' mod='sliderresponsivo'}</p>
                                                     </div>
-                                                    
+
                                                     <div class="form-group">
                                                         <label for="alt_{$language.id_lang}">{l s='Texto alternativo (SEO)' mod='sliderresponsivo'}</label>
                                                         <input type="text" name="alt_{$language.id_lang}" id="alt_{$language.id_lang}" class="form-control" />
                                                         <p class="help-block">{l s='Texto alternativo para la imagen, importante para SEO y accesibilidad' mod='sliderresponsivo'}</p>
+                                                    </div>
+
+                                                    <div class="panel lang-image-override">
+                                                        <div class="panel-heading">
+                                                            {l s='Imágenes específicas para este idioma (opcional)' mod='sliderresponsivo'}
+                                                        </div>
+                                                        <div class="panel-body">
+                                                            <p class="help-block">{l s='Si no subes una imagen aquí, se usará la imagen predeterminada de escritorio/móvil configurada más arriba.' mod='sliderresponsivo'}</p>
+                                                            <div class="row">
+                                                                <div class="col-md-6">
+                                                                    <label>{l s='Escritorio' mod='sliderresponsivo'}</label>
+                                                                    <div class="dropzone lang-dropzone">
+                                                                        <input type="file" name="desktop_image_{$language.id_lang}" id="desktop_image_{$language.id_lang}" class="image-upload lang-image-upload" data-preview="desktop-preview-{$language.id_lang}" accept="image/*" />
+                                                                        <i class="icon icon-cloud-upload"></i>
+                                                                        <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
+                                                                    </div>
+                                                                    <div class="preview-box text-center lang-preview-box" data-lang="{$language.id_lang}" data-type="desktop" style="display: none;">
+                                                                        <img id="desktop-preview-{$language.id_lang}" class="img-responsive img-thumbnail preview-image" src="" alt="" />
+                                                                        <div>
+                                                                            <label class="remove-lang-image">
+                                                                                <input type="checkbox" name="remove_desktop_image_{$language.id_lang}" value="1" class="remove-lang-image-checkbox" />
+                                                                                {l s='Quitar y usar la predeterminada' mod='sliderresponsivo'}
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label>{l s='Móvil' mod='sliderresponsivo'}</label>
+                                                                    <div class="dropzone lang-dropzone">
+                                                                        <input type="file" name="mobile_image_{$language.id_lang}" id="mobile_image_{$language.id_lang}" class="image-upload lang-image-upload" data-preview="mobile-preview-{$language.id_lang}" accept="image/*" />
+                                                                        <i class="icon icon-cloud-upload"></i>
+                                                                        <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
+                                                                    </div>
+                                                                    <div class="preview-box text-center lang-preview-box" data-lang="{$language.id_lang}" data-type="mobile" style="display: none;">
+                                                                        <img id="mobile-preview-{$language.id_lang}" class="img-responsive img-thumbnail preview-image" src="" alt="" />
+                                                                        <div>
+                                                                            <label class="remove-lang-image">
+                                                                                <input type="checkbox" name="remove_mobile_image_{$language.id_lang}" value="1" class="remove-lang-image-checkbox" />
+                                                                                {l s='Quitar y usar la predeterminada' mod='sliderresponsivo'}
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             {/foreach}
@@ -292,365 +338,3 @@
         </form>
     </div>
 </div>
-
-<script type="text/javascript">
-    var currentUrl = '{$current_url|escape:'javascript':'UTF-8'}';
-    var token = '{$token|escape:'javascript':'UTF-8'}';
-    var defaultLangId = {$default_lang|intval};
-    var confirmDeleteLang = '{l s='¿Está seguro que desea eliminar esta imagen? Esta acción no se puede deshacer.' mod='sliderresponsivo' js=1}';
-    var confirmShown = false;
-    
-    $(document).ready(function() {
-        // Inicializar ordenamiento
-        initializeSortable();
-        
-        // Inicializar tooltips
-        initializeTooltips();
-        
-        // Inicializar dropzone
-        initializeDropzone();
-        
-        // Previsualización de imágenes al seleccionarlas
-        initializeImagePreview();
-        
-        // Funciones para gestionar el formulario
-        initializeFormHandling();
-        
-        // Nuevo manejador para prevenir doble confirmación
-        $('.btn-delete-image').on('click', function(e) {
-            if (!confirmShown) {
-                if (!confirm(confirmDeleteLang)) {
-                    e.preventDefault();
-                } else {
-                    confirmShown = true;
-                }
-            }
-        });
-        
-        // AJAX para cambiar el estado
-        $('.status-toggle').on('click', function(e) {
-            e.preventDefault();
-            var btn = $(this);
-            var imageId = btn.data('id');
-            
-            // Mostrar indicador de carga
-            showLoadingMessage('Actualizando estado...');
-            
-            // Realizar la llamada AJAX para cambiar el estado
-            $.ajax({
-                url: currentUrl + '&changeImageStatus=1&id_image=' + imageId + '&ajax=1&token=' + token,
-                method: 'POST',
-                dataType: 'json',
-                success: function(response) {
-                    hideLoadingMessage();
-                    
-                    if (response.success) {
-                        // Cambiar el estado visual y los atributos
-                        var isNowActive = response.status == 1;
-                        
-                        if (isNowActive) {
-                            btn.removeClass('action-disabled').addClass('action-enabled');
-                            btn.find('i').removeClass('icon-check-empty').addClass('icon-check');
-                            btn.attr('title', '{l s='Habilitado' mod='sliderresponsivo' js=1}');
-                        } else {
-                            btn.removeClass('action-enabled').addClass('action-disabled');
-                            btn.find('i').removeClass('icon-check').addClass('icon-check-empty');
-                            btn.attr('title', '{l s='Deshabilitado' mod='sliderresponsivo' js=1}');
-                        }
-                        
-                        // Actualizar el estado para futuros clics
-                        btn.data('current-status', isNowActive ? 1 : 0);
-                        
-                        showSuccessMessage('{l s='Estado actualizado correctamente' mod='sliderresponsivo' js=1}');
-                    } else {
-                        showErrorMessage(response.message || '{l s='Error al actualizar el estado' mod='sliderresponsivo' js=1}');
-                    }
-                },
-                error: function() {
-                    hideLoadingMessage();
-                    showErrorMessage('{l s='Error de conexión al actualizar el estado' mod='sliderresponsivo' js=1}');
-                }
-            });
-        });
-    });
-    
-    function initializeSortable() {
-        if (typeof $.fn.sortable !== 'undefined') {
-            $('.sortable-images').sortable({
-                axis: 'y',
-                handle: '.position-handle',
-                helper: function(e, tr) {
-                    var $originals = tr.children();
-                    var $helper = tr.clone();
-                    $helper.children().each(function(index) {
-                        $(this).width($originals.eq(index).width());
-                    });
-                    return $helper;
-                },
-                start: function(event, ui) {
-                    $(this).addClass('sorting');
-                    ui.item.data('oldPosition', ui.item.index() + 1);
-                },
-                stop: function(event, ui) {
-                    $(this).removeClass('sorting');
-                },
-                update: function(event, ui) {
-                    // Actualizar posiciones visualmente
-                    var position = 1;
-                    var positions = {};
-                    
-                    $('.sortable-images tr').each(function() {
-                        var id = $(this).data('id');
-                        $(this).find('.position-value').val(position);
-                        $(this).find('.position-display').text(position);
-                        positions[id] = position;
-                        position++;
-                    });
-                    
-                    // Enviar posiciones al servidor
-                    $.ajax({
-                        url: currentUrl + '&updatePositions=1&token=' + token,
-                        method: 'POST',
-                        data: {
-                            image_position: positions
-                        },
-                        success: function(response) {
-                            showSuccessMessage('{l s='Posiciones actualizadas' mod='sliderresponsivo' js=1}');
-                        },
-                        error: function() {
-                            showErrorMessage('{l s='Error al actualizar posiciones' mod='sliderresponsivo' js=1}');
-                        }
-                    });
-                }
-            }).disableSelection();
-        }
-    }
-    
-    function initializeTooltips() {
-        $('.sr-tooltip').hover(
-            function() {
-                $(this).find('.sr-tooltip-text').css('visibility', 'visible').css('opacity', '1');
-            },
-            function() {
-                $(this).find('.sr-tooltip-text').css('visibility', 'hidden').css('opacity', '0');
-            }
-        );
-    }
-    
-    function initializeDropzone() {
-        $('.dropzone').each(function() {
-            const dropzone = $(this);
-            const input = dropzone.find('input[type="file"]');
-            
-            // Eventos para arrastrar y soltar
-            dropzone.on('dragover dragenter', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.addClass('dropzone-active');
-            });
-            
-            dropzone.on('dragleave dragend drop', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.removeClass('dropzone-active');
-            });
-            
-            dropzone.on('drop', function(e) {
-                const files = e.originalEvent.dataTransfer.files;
-                if (files.length) {
-                    // Asignar archivos al input
-                    input[0].files = files;
-                    
-                    // Disparar evento change para actualizar la vista previa
-                    input.trigger('change');
-                }
-            });
-            
-            // Click en la zona para abrir selector de archivos
-            dropzone.on('click', function() {
-                input.click();
-            });
-        });
-    }
-    
-    function initializeImagePreview() {
-        $('.image-upload').on('change', function() {
-            const input = this;
-            const previewId = $(this).data('preview');
-            const preview = $('#' + previewId);
-            const previewBox = preview.closest('.preview-box');
-            
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    preview.attr('src', e.target.result);
-                    previewBox.fadeIn(300);
-                    
-                    // Actualizar vista previa en tiempo real
-                    updateLivePreview();
-                };
-                
-                reader.readAsDataURL(input.files[0]);
-            }
-        });
-    }
-    
-    function updateLivePreview() {
-        // Si existe la vista previa en tiempo real
-        const title = $('#title_' + defaultLangId).val() || '{l s='Vista previa' mod='sliderresponsivo' js=1}';
-        const desktopSrc = $('#desktop-preview').attr('src');
-        const mobileSrc = $('#mobile-preview').attr('src');
-        
-        $('.live-preview-title').text(title);
-        
-        if (desktopSrc) {
-            $('.live-preview-desktop img').attr('src', desktopSrc);
-            $('.live-preview-desktop').show();
-        }
-        
-        if (mobileSrc) {
-            $('.live-preview-mobile img').attr('src', mobileSrc);
-            $('.live-preview-mobile').show();
-        }
-    }
-    
-    function initializeFormHandling() {
-        // Mostrar formulario de edición
-        $('.btn-edit-image').on('click', function(e) {
-            e.preventDefault();
-            
-            const imageId = $(this).data('id');
-            $('#form-title').text('{l s='Editar imagen' mod='sliderresponsivo' js=1}');
-            
-            // Ocultar lista y mostrar formulario
-            $('#slider-image-list').fadeOut(300, function() {
-                $('#slider-image-form').fadeIn(300);
-            });
-            
-            // Resetear formulario primero
-            resetForm();
-            
-            // Mostrar mensaje de carga
-            showLoadingMessage('{l s='Cargando datos de la imagen...' mod='sliderresponsivo' js=1}');
-            
-            // Cargar datos de la imagen
-            $.ajax({
-                url: currentUrl + '&action=getImage&id_image=' + imageId + '&token=' + token,
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    // Ocultar mensaje de carga
-                    hideLoadingMessage();
-                    
-                    if (response.success) {
-                        fillImageForm(response.image);
-                        updateLivePreview();
-                    } else {
-                        showErrorMessage('{l s='Error al cargar la imagen' mod='sliderresponsivo' js=1}');
-                        $('#slider-image-list').fadeIn(300);
-                        $('#slider-image-form').hide();
-                    }
-                },
-                error: function() {
-                    // Ocultar mensaje de carga
-                    hideLoadingMessage();
-                    
-                    showErrorMessage('{l s='Error al cargar la imagen' mod='sliderresponsivo' js=1}');
-                    $('#slider-image-list').fadeIn(300);
-                    $('#slider-image-form').hide();
-                }
-            });
-        });
-        
-        // Botón para cancelar edición
-        $('#btn-cancel-image').on('click', function(e) {
-            e.preventDefault();
-            
-            // Mostrar lista y ocultar formulario
-            $('#slider-image-form').fadeOut(300, function() {
-                $('#slider-image-list').fadeIn(300);
-            });
-            
-            // Limpiar formulario
-            resetForm();
-        });
-        
-        // Botón para añadir nueva imagen
-        $('#btn-add-image').on('click', function(e) {
-            e.preventDefault();
-            
-            resetForm();
-            $('#form-title').text('{l s='Añadir nueva imagen' mod='sliderresponsivo' js=1}');
-            
-            // Mostrar formulario y ocultar lista
-            $('#slider-image-list').fadeOut(300, function() {
-                $('#slider-image-form').fadeIn(300);
-            });
-        });
-        
-        // Escuchar cambios en los campos de texto para actualizar vista previa
-        $('.slider-image-form input[type="text"], .slider-image-form textarea').on('input', function() {
-            updateLivePreview();
-        });
-        
-        // Activar tabs de Bootstrap
-        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            // Actualizar vista previa cuando se cambia de pestaña
-            updateLivePreview();
-        });
-    }
-    
-    function resetForm() {
-        $('#image-form')[0].reset();
-        $('#id_image').val(0);
-        $('.preview-image').attr('src', '');
-        $('.preview-box').hide();
-        $('.live-preview-desktop, .live-preview-mobile').hide();
-    }
-    
-    function fillImageForm(image) {
-        $('#id_image').val(image.id_image);
-        $('#image-url').val(image.url);
-        $('#image-active').prop('checked', image.active == 1);
-        
-        // Campos multilingüe
-        for (const langId in image.languages) {
-            if (image.languages.hasOwnProperty(langId)) {
-                const data = image.languages[langId];
-                $('#title_' + langId).val(data.title);
-                $('#description_' + langId).val(data.description);
-                $('#alt_' + langId).val(data.alt);
-            }
-        }
-        
-        // Mostrar miniaturas de imágenes existentes
-        if (image.desktop_image) {
-            $('#desktop-preview').attr('src', image.desktop_url).closest('.preview-box').show();
-        }
-        
-        if (image.mobile_image) {
-            $('#mobile-preview').attr('src', image.mobile_url).closest('.preview-box').show();
-        }
-    }
-    
-    function showLoadingMessage(message) {
-        if ($('#loading-message').length === 0) {
-            $('body').append('<div id="loading-message" class="alert alert-info"><i class="icon-refresh icon-spin"></i> ' + message + '</div>');
-        } else {
-            $('#loading-message').html('<i class="icon-refresh icon-spin"></i> ' + message).show();
-        }
-    }
-    
-    function hideLoadingMessage() {
-        $('#loading-message').fadeOut(300);
-    }
-    
-    function showSuccessMessage(message) {
-        $.growl.notice({ title: "", message: message });
-    }
-    
-    function showErrorMessage(message) {
-        $.growl.error({ title: "", message: message });
-    }
-</script>

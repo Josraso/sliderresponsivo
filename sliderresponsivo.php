@@ -30,12 +30,13 @@ class SliderResponsivo extends Module implements WidgetInterface
     protected $default_height_mobile = 500;
     protected $default_quality = 90;
     protected $default_effect = 'slide';
+    protected $max_upload_size = 8388608; // 8 MB
 
     public function __construct()
     {
         $this->name = 'sliderresponsivo';
         $this->tab = 'front_office_features';
-        $this->version = '1.0.2';
+        $this->version = '1.1.0';
         $this->author = 'PrestaShop';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -45,7 +46,7 @@ class SliderResponsivo extends Module implements WidgetInterface
         $this->displayName = $this->l('Slider Responsivo');
         $this->description = $this->l('Módulo de slider con imágenes específicas para escritorio y móvil');
         $this->confirmUninstall = $this->l('¿Está seguro que desea desinstalar este módulo?');
-        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => '8.99.99'];
+        $this->ps_versions_compliancy = ['min' => '1.7.0', 'max' => '9.99.99'];
     }
 
     /**
@@ -77,14 +78,19 @@ class SliderResponsivo extends Module implements WidgetInterface
         // Crear carpeta de imágenes si no existe
         $img_dir = _PS_MODULE_DIR_.$this->name.'/views/img/';
         if (!is_dir($img_dir)) {
-            mkdir($img_dir, 0777, true);
+            mkdir($img_dir, 0755, true);
         }
 
         // Crear carpeta de caché si no existe
         $cache_dir = _PS_MODULE_DIR_.$this->name.'/views/img/cache/';
         if (!is_dir($cache_dir)) {
-            mkdir($cache_dir, 0777, true);
+            mkdir($cache_dir, 0755, true);
         }
+
+        // Reforzar el directorio de subidas: impedir la ejecución de scripts
+        // aunque en el futuro se cuele un archivo con una extensión inesperada.
+        $this->protectUploadDirectory($img_dir);
+        $this->protectUploadDirectory($cache_dir);
 
         return parent::install() &&
             $this->registerHook('header') &&
@@ -132,6 +138,29 @@ class SliderResponsivo extends Module implements WidgetInterface
             $this->context->controller->addJqueryUI('ui.sortable');
             $this->context->controller->addJqueryUI('ui.draggable');
             $this->context->controller->addJqueryUI('ui.droppable');
+
+            Media::addJsDef([
+                'sliderResponsivoAdmin' => [
+                    'currentUrl' => $this->context->link->getAdminLink('AdminModules').'&configure='.$this->name,
+                    'token' => Tools::getAdminTokenLite('AdminModules'),
+                    'defaultLangId' => (int)Configuration::get('PS_LANG_DEFAULT'),
+                    'confirmDelete' => $this->l('¿Está seguro que desea eliminar esta imagen? Esta acción no se puede deshacer.'),
+                    'i18n' => [
+                        'editTitle' => $this->l('Editar imagen'),
+                        'addTitle' => $this->l('Añadir nueva imagen'),
+                        'loading' => $this->l('Cargando datos de la imagen...'),
+                        'loadError' => $this->l('Error al cargar la imagen'),
+                        'updatingStatus' => $this->l('Actualizando estado...'),
+                        'statusUpdated' => $this->l('Estado actualizado correctamente'),
+                        'statusError' => $this->l('Error al actualizar el estado'),
+                        'connectionError' => $this->l('Error de conexión al actualizar el estado'),
+                        'positionsUpdated' => $this->l('Posiciones actualizadas'),
+                        'positionsError' => $this->l('Error al actualizar posiciones'),
+                        'enabled' => $this->l('Habilitado'),
+                        'disabled' => $this->l('Deshabilitado')
+                    ]
+                ]
+            ]);
         }
     }
 
@@ -203,43 +232,63 @@ class SliderResponsivo extends Module implements WidgetInterface
     public function getContent()
     {
         $output = '';
-        
+
+        // Autorreparar la protección del directorio de subidas por si el
+        // módulo se instaló con una versión anterior a la que la introdujo.
+        $this->protectUploadDirectory(_PS_MODULE_DIR_.$this->name.'/views/img/');
+        $this->protectUploadDirectory(_PS_MODULE_DIR_.$this->name.'/views/img/cache/');
+
         // Manejar eliminación de imagen
-        if (Tools::isSubmit('deleteImage')) {
+        if (Tools::isSubmit('deleteImage') && !$this->isValidToken()) {
+            $output .= $this->displayError($this->l('Token de seguridad inválido.'));
+        } elseif (Tools::isSubmit('deleteImage')) {
             $id_image = (int)Tools::getValue('id_image');
-            
+
             if ($id_image > 0) {
                 // Obtener información de la imagen primero
                 $image_data = Db::getInstance()->getRow('SELECT desktop_image, mobile_image FROM '._DB_PREFIX_.'sliderresponsivo_imagen WHERE id_image = '.(int)$id_image);
-                
+
                 if ($image_data) {
                     // Archivo de imágenes a borrar
                     $files_to_delete = [];
                     $upload_dir = _PS_MODULE_DIR_.$this->name.'/views/img/';
-                    
+
                     if (!empty($image_data['desktop_image']) && file_exists($upload_dir.$image_data['desktop_image'])) {
                         $files_to_delete[] = $upload_dir.$image_data['desktop_image'];
                     }
-                    
+
                     if (!empty($image_data['mobile_image']) && file_exists($upload_dir.$image_data['mobile_image'])) {
                         $files_to_delete[] = $upload_dir.$image_data['mobile_image'];
                     }
-                    
+
+                    // Incluir también las imágenes específicas por idioma
+                    $lang_images = Db::getInstance()->executeS(
+                        'SELECT desktop_image, mobile_image FROM '._DB_PREFIX_.'sliderresponsivo_imagen_lang WHERE id_image = '.(int)$id_image
+                    );
+                    foreach ($lang_images as $lang_image) {
+                        if (!empty($lang_image['desktop_image']) && file_exists($upload_dir.$lang_image['desktop_image'])) {
+                            $files_to_delete[] = $upload_dir.$lang_image['desktop_image'];
+                        }
+                        if (!empty($lang_image['mobile_image']) && file_exists($upload_dir.$lang_image['mobile_image'])) {
+                            $files_to_delete[] = $upload_dir.$lang_image['mobile_image'];
+                        }
+                    }
+
                     // Eliminar primero los registros de idioma
                     $deleted1 = Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'sliderresponsivo_imagen_lang` WHERE `id_image` = '.(int)$id_image);
-                    
+
                     // Luego eliminar el registro principal
                     $deleted2 = Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'sliderresponsivo_imagen` WHERE `id_image` = '.(int)$id_image);
-                    
+
                     if ($deleted1 !== false && $deleted2 !== false) {
                         // Eliminar archivos físicos
                         foreach ($files_to_delete as $file) {
                             @unlink($file);
                         }
-                        
+
                         // Reordenar posiciones
                         $this->reorderImagePositions();
-                        
+
                         $output .= $this->displayConfirmation($this->l('Imagen eliminada correctamente'));
                     } else {
                         $output .= $this->displayError($this->l('Error al eliminar la imagen de la base de datos'));
@@ -249,29 +298,40 @@ class SliderResponsivo extends Module implements WidgetInterface
                 }
             }
         }
-        
+
         // AJAX: Obtener información de imagen para editar
         if (Tools::isSubmit('action') && Tools::getValue('action') == 'getImage') {
+            if (!$this->isValidToken()) {
+                die(json_encode(['success' => false, 'message' => $this->l('Token de seguridad inválido.')]));
+            }
+
             $id_image = (int)Tools::getValue('id_image');
             if ($id_image > 0) {
                 // Obtener datos de la imagen directamente con SQL
                 $image_data = Db::getInstance()->getRow('SELECT * FROM '._DB_PREFIX_.'sliderresponsivo_imagen WHERE id_image = '.(int)$id_image);
-                
+
                 if ($image_data) {
                     // Obtener datos multilingüe
                     $languages_data = [];
                     $langs_result = Db::getInstance()->executeS(
                         'SELECT * FROM '._DB_PREFIX_.'sliderresponsivo_imagen_lang WHERE id_image = '.(int)$id_image
                     );
-                    
+
                     foreach ($langs_result as $lang) {
+                        $lang_desktop_image = !empty($lang['desktop_image']) ? $lang['desktop_image'] : '';
+                        $lang_mobile_image = !empty($lang['mobile_image']) ? $lang['mobile_image'] : '';
+
                         $languages_data[$lang['id_lang']] = [
                             'title' => $lang['title'],
                             'description' => $lang['description'],
-                            'alt' => $lang['alt']
+                            'alt' => $lang['alt'],
+                            'desktop_image' => $lang_desktop_image,
+                            'mobile_image' => $lang_mobile_image,
+                            'desktop_url' => $lang_desktop_image ? $this->_path.'views/img/'.$lang_desktop_image : '',
+                            'mobile_url' => $lang_mobile_image ? $this->_path.'views/img/'.$lang_mobile_image : ''
                         ];
                     }
-                    
+
                     die(json_encode([
                         'success' => true,
                         'image' => [
@@ -288,12 +348,14 @@ class SliderResponsivo extends Module implements WidgetInterface
                     ]));
                 }
             }
-            
+
             die(json_encode(['success' => false]));
         }
 
         // Procesar el formulario de configuración
-        if (Tools::isSubmit('submitSliderResponsivoConfig')) {
+        if (Tools::isSubmit('submitSliderResponsivoConfig') && !$this->isValidToken()) {
+            $output .= $this->displayError($this->l('Token de seguridad inválido. Recargue la página e inténtelo de nuevo.'));
+        } elseif (Tools::isSubmit('submitSliderResponsivoConfig')) {
             $width_desktop = (int)Tools::getValue('SLIDERRESPONSIVO_WIDTH_DESKTOP');
             $height_desktop = (int)Tools::getValue('SLIDERRESPONSIVO_HEIGHT_DESKTOP');
             $width_mobile = (int)Tools::getValue('SLIDERRESPONSIVO_WIDTH_MOBILE');
@@ -352,7 +414,8 @@ class SliderResponsivo extends Module implements WidgetInterface
         // Preparar variables para la plantilla
         $this->context->smarty->assign([
             'module_dir' => $this->_path,
-            'current_url' => $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name,
+            'current_url' => $this->context->link->getAdminLink('AdminModules').'&configure='.$this->name,
+            'token' => Tools::getAdminTokenLite('AdminModules'),
             'SLIDERRESPONSIVO_WIDTH_DESKTOP' => Configuration::get('SLIDERRESPONSIVO_WIDTH_DESKTOP', null, null, null, $this->default_width_desktop),
             'SLIDERRESPONSIVO_HEIGHT_DESKTOP' => Configuration::get('SLIDERRESPONSIVO_HEIGHT_DESKTOP', null, null, null, $this->default_height_desktop),
             'SLIDERRESPONSIVO_WIDTH_MOBILE' => Configuration::get('SLIDERRESPONSIVO_WIDTH_MOBILE', null, null, null, $this->default_width_mobile),
@@ -400,6 +463,11 @@ class SliderResponsivo extends Module implements WidgetInterface
     {
         // Guardar nueva imagen o actualizar existente
         if (Tools::isSubmit('submitImage')) {
+            if (!$this->isValidToken()) {
+                $output .= $this->displayError($this->l('Token de seguridad inválido. Recargue la página e inténtelo de nuevo.'));
+                return;
+            }
+
             $id_image = (int)Tools::getValue('id_image');
             $url = Tools::getValue('url');
             $active = (int)Tools::getValue('active');
@@ -407,19 +475,31 @@ class SliderResponsivo extends Module implements WidgetInterface
             $description = [];
             $alt = [];
             $errors = [];
-            
-            // Validar campos multilingües
+
+            // Validar campos multilingües (textos e imágenes específicas por idioma)
             $languages = Language::getLanguages(false);
             foreach ($languages as $language) {
-                $title[$language['id_lang']] = Tools::getValue('title_'.$language['id_lang']);
-                $description[$language['id_lang']] = Tools::getValue('description_'.$language['id_lang']);
-                $alt[$language['id_lang']] = Tools::getValue('alt_'.$language['id_lang']);
-                
-                if (empty($title[$language['id_lang']])) {
+                $id_lang = (int)$language['id_lang'];
+                $title[$id_lang] = Tools::getValue('title_'.$id_lang);
+                $description[$id_lang] = Tools::getValue('description_'.$id_lang);
+                $alt[$id_lang] = Tools::getValue('alt_'.$id_lang);
+
+                if (empty($title[$id_lang])) {
                     $errors[] = $this->l('El título es obligatorio para ').strtoupper($language['iso_code']);
                 }
+
+                foreach (['desktop_image_'.$id_lang, 'mobile_image_'.$id_lang] as $file_key) {
+                    if (isset($_FILES[$file_key]) && !empty($_FILES[$file_key]['tmp_name'])
+                        && !$this->getValidatedUploadExtension($_FILES[$file_key])
+                    ) {
+                        $errors[] = sprintf(
+                            $this->l('La imagen subida para %s no es un archivo de imagen válido (jpg, png, gif o webp)'),
+                            strtoupper($language['iso_code'])
+                        );
+                    }
+                }
             }
-            
+
             // Validar si es una imagen nueva o edición
             if ($id_image > 0) {
                 // Edición: Comprobar que la imagen existe mediante SQL directo
@@ -427,72 +507,82 @@ class SliderResponsivo extends Module implements WidgetInterface
                 if (!$exists) {
                     $errors[] = $this->l('La imagen que se intenta editar no existe');
                 }
+
+                foreach (['desktop_image', 'mobile_image'] as $file_key) {
+                    if (isset($_FILES[$file_key]) && !empty($_FILES[$file_key]['tmp_name'])
+                        && !$this->getValidatedUploadExtension($_FILES[$file_key])
+                    ) {
+                        $errors[] = $this->l('El archivo subido no es una imagen válida (jpg, png, gif o webp)');
+                    }
+                }
             } else {
-                // Nueva imagen: Comprobar que se han subido imágenes
+                // Nueva imagen: Comprobar que se han subido imágenes válidas
                 if (!isset($_FILES['desktop_image']) || empty($_FILES['desktop_image']['tmp_name'])) {
                     $errors[] = $this->l('La imagen de escritorio es obligatoria');
+                } elseif (!$this->getValidatedUploadExtension($_FILES['desktop_image'])) {
+                    $errors[] = $this->l('La imagen de escritorio no es un archivo de imagen válido (jpg, png, gif o webp)');
                 }
                 if (!isset($_FILES['mobile_image']) || empty($_FILES['mobile_image']['tmp_name'])) {
                     $errors[] = $this->l('La imagen de móvil es obligatoria');
+                } elseif (!$this->getValidatedUploadExtension($_FILES['mobile_image'])) {
+                    $errors[] = $this->l('La imagen de móvil no es un archivo de imagen válido (jpg, png, gif o webp)');
                 }
             }
-            
+
             // Procesar si no hay errores
             if (empty($errors)) {
                 // Usar SQL directo en lugar de ObjectModel
                 $upload_dir = _PS_MODULE_DIR_.$this->name.'/views/img/';
                 $date_now = date('Y-m-d H:i:s');
-                
+
                 if ($id_image > 0) {
                     // Editar imagen existente - obtener datos actuales
                     $current_image = Db::getInstance()->getRow('SELECT * FROM '._DB_PREFIX_.'sliderresponsivo_imagen WHERE id_image = '.(int)$id_image);
                     $desktop_image = $current_image['desktop_image'];
                     $mobile_image = $current_image['mobile_image'];
-                    
-                    // Imagen de escritorio
+
+                    // Imagen de escritorio (predeterminada)
                     if (isset($_FILES['desktop_image']) && !empty($_FILES['desktop_image']['tmp_name'])) {
-                        $ext = pathinfo($_FILES['desktop_image']['name'], PATHINFO_EXTENSION);
+                        $ext = $this->getValidatedUploadExtension($_FILES['desktop_image']);
                         $desktop_filename = 'desktop_'.time().'_'.$id_image.'.'.$ext;
-                        
-                        // Redimensionar y optimizar imagen
-                        $this->processUploadedImage(
+
+                        if ($this->processUploadedImage(
                             $_FILES['desktop_image']['tmp_name'],
                             $upload_dir.$desktop_filename,
                             Configuration::get('SLIDERRESPONSIVO_WIDTH_DESKTOP'),
                             Configuration::get('SLIDERRESPONSIVO_HEIGHT_DESKTOP'),
                             Configuration::get('SLIDERRESPONSIVO_QUALITY')
-                        );
-                        
-                        // Eliminar imagen anterior si existe
-                        if (!empty($current_image['desktop_image']) && file_exists($upload_dir.$current_image['desktop_image'])) {
-                            @unlink($upload_dir.$current_image['desktop_image']);
+                        )) {
+                            // Eliminar imagen anterior si existe
+                            if (!empty($current_image['desktop_image']) && file_exists($upload_dir.$current_image['desktop_image'])) {
+                                @unlink($upload_dir.$current_image['desktop_image']);
+                            }
+
+                            $desktop_image = $desktop_filename;
                         }
-                        
-                        $desktop_image = $desktop_filename;
                     }
-                    
-                    // Imagen de móvil
+
+                    // Imagen de móvil (predeterminada)
                     if (isset($_FILES['mobile_image']) && !empty($_FILES['mobile_image']['tmp_name'])) {
-                        $ext = pathinfo($_FILES['mobile_image']['name'], PATHINFO_EXTENSION);
+                        $ext = $this->getValidatedUploadExtension($_FILES['mobile_image']);
                         $mobile_filename = 'mobile_'.time().'_'.$id_image.'.'.$ext;
-                        
-                        // Redimensionar y optimizar imagen
-                        $this->processUploadedImage(
+
+                        if ($this->processUploadedImage(
                             $_FILES['mobile_image']['tmp_name'],
                             $upload_dir.$mobile_filename,
                             Configuration::get('SLIDERRESPONSIVO_WIDTH_MOBILE'),
                             Configuration::get('SLIDERRESPONSIVO_HEIGHT_MOBILE'),
                             Configuration::get('SLIDERRESPONSIVO_QUALITY')
-                        );
-                        
-                        // Eliminar imagen anterior si existe
-                        if (!empty($current_image['mobile_image']) && file_exists($upload_dir.$current_image['mobile_image'])) {
-                            @unlink($upload_dir.$current_image['mobile_image']);
+                        )) {
+                            // Eliminar imagen anterior si existe
+                            if (!empty($current_image['mobile_image']) && file_exists($upload_dir.$current_image['mobile_image'])) {
+                                @unlink($upload_dir.$current_image['mobile_image']);
+                            }
+
+                            $mobile_image = $mobile_filename;
                         }
-                        
-                        $mobile_image = $mobile_filename;
                     }
-                    
+
                     // Actualizar la imagen en la base de datos
                     $updated = Db::getInstance()->update(
                         'sliderresponsivo_imagen',
@@ -505,21 +595,41 @@ class SliderResponsivo extends Module implements WidgetInterface
                         ],
                         'id_image = '.(int)$id_image
                     );
-                    
-                    // Actualizar los campos multilingüe
+
+                    // Recuperar overrides actuales por idioma para poder conservarlos/reemplazarlos
+                    $current_lang_images = [];
+                    $current_lang_rows = Db::getInstance()->executeS(
+                        'SELECT id_lang, desktop_image, mobile_image FROM '._DB_PREFIX_.'sliderresponsivo_imagen_lang WHERE id_image = '.(int)$id_image
+                    );
+                    foreach ($current_lang_rows as $row) {
+                        $current_lang_images[(int)$row['id_lang']] = $row;
+                    }
+
+                    // Actualizar los campos multilingüe (textos + imágenes específicas del idioma)
                     $success = $updated;
                     foreach ($languages as $language) {
-                        $success &= Db::getInstance()->update(
+                        $id_lang = (int)$language['id_lang'];
+                        list($lang_desktop_image, $lang_mobile_image) = $this->processLanguageImageOverrides(
+                            $id_lang,
+                            $id_image,
+                            isset($current_lang_images[$id_lang]) ? $current_lang_images[$id_lang]['desktop_image'] : '',
+                            isset($current_lang_images[$id_lang]) ? $current_lang_images[$id_lang]['mobile_image'] : '',
+                            $upload_dir
+                        );
+
+                        $success = $success && Db::getInstance()->update(
                             'sliderresponsivo_imagen_lang',
                             [
-                                'title' => pSQL($title[$language['id_lang']]),
-                                'description' => pSQL($description[$language['id_lang']], true),
-                                'alt' => pSQL($alt[$language['id_lang']])
+                                'title' => pSQL($title[$id_lang]),
+                                'description' => pSQL($description[$id_lang], true),
+                                'alt' => pSQL($alt[$id_lang]),
+                                'desktop_image' => pSQL($lang_desktop_image),
+                                'mobile_image' => pSQL($lang_mobile_image)
                             ],
-                            'id_image = '.(int)$id_image.' AND id_lang = '.(int)$language['id_lang']
+                            'id_image = '.(int)$id_image.' AND id_lang = '.$id_lang
                         );
                     }
-                    
+
                     if ($success) {
                         $output .= $this->displayConfirmation($this->l('Imagen actualizada correctamente'));
                     } else {
@@ -528,11 +638,11 @@ class SliderResponsivo extends Module implements WidgetInterface
                 } else {
                     // Nueva imagen
                     $position = (int)Db::getInstance()->getValue('SELECT IFNULL(MAX(position), 0) + 1 FROM '._DB_PREFIX_.'sliderresponsivo_imagen');
-                    
+
                     // Procesar imagen de escritorio
-                    $ext = pathinfo($_FILES['desktop_image']['name'], PATHINFO_EXTENSION);
+                    $ext = $this->getValidatedUploadExtension($_FILES['desktop_image']);
                     $desktop_filename = 'desktop_'.time().'_new.'.$ext;
-                    
+
                     $this->processUploadedImage(
                         $_FILES['desktop_image']['tmp_name'],
                         $upload_dir.$desktop_filename,
@@ -540,11 +650,11 @@ class SliderResponsivo extends Module implements WidgetInterface
                         Configuration::get('SLIDERRESPONSIVO_HEIGHT_DESKTOP'),
                         Configuration::get('SLIDERRESPONSIVO_QUALITY')
                     );
-                    
+
                     // Procesar imagen de móvil
-                    $ext = pathinfo($_FILES['mobile_image']['name'], PATHINFO_EXTENSION);
+                    $ext = $this->getValidatedUploadExtension($_FILES['mobile_image']);
                     $mobile_filename = 'mobile_'.time().'_new.'.$ext;
-                    
+
                     $this->processUploadedImage(
                         $_FILES['mobile_image']['tmp_name'],
                         $upload_dir.$mobile_filename,
@@ -552,7 +662,7 @@ class SliderResponsivo extends Module implements WidgetInterface
                         Configuration::get('SLIDERRESPONSIVO_HEIGHT_MOBILE'),
                         Configuration::get('SLIDERRESPONSIVO_QUALITY')
                     );
-                    
+
                     // Insertar en la base de datos
                     $inserted = Db::getInstance()->insert(
                         'sliderresponsivo_imagen',
@@ -566,36 +676,47 @@ class SliderResponsivo extends Module implements WidgetInterface
                             'date_upd' => pSQL($date_now)
                         ]
                     );
-                    
+
                     if ($inserted) {
                         $id_image = (int)Db::getInstance()->Insert_ID();
-                        
-                        // Insertar campos multilingüe
+
+                        // Insertar campos multilingüe (textos + imágenes específicas del idioma)
                         $success = true;
                         foreach ($languages as $language) {
-                            $success &= Db::getInstance()->insert(
+                            $id_lang = (int)$language['id_lang'];
+                            list($lang_desktop_image, $lang_mobile_image) = $this->processLanguageImageOverrides(
+                                $id_lang,
+                                $id_image,
+                                '',
+                                '',
+                                $upload_dir
+                            );
+
+                            $success = $success && Db::getInstance()->insert(
                                 'sliderresponsivo_imagen_lang',
                                 [
                                     'id_image' => (int)$id_image,
-                                    'id_lang' => (int)$language['id_lang'],
-                                    'title' => pSQL($title[$language['id_lang']]),
-                                    'description' => pSQL($description[$language['id_lang']], true),
-                                    'alt' => pSQL($alt[$language['id_lang']])
+                                    'id_lang' => $id_lang,
+                                    'title' => pSQL($title[$id_lang]),
+                                    'description' => pSQL($description[$id_lang], true),
+                                    'alt' => pSQL($alt[$id_lang]),
+                                    'desktop_image' => pSQL($lang_desktop_image),
+                                    'mobile_image' => pSQL($lang_mobile_image)
                                 ]
                             );
                         }
-                        
+
                         if ($success) {
                             $output .= $this->displayConfirmation($this->l('Nueva imagen añadida correctamente'));
                         } else {
                             $output .= $this->displayError($this->l('Error al guardar los datos multilingüe'));
-                            
+
                             // Intentar eliminar la imagen principal si hubo error en las traducciones
                             Db::getInstance()->delete('sliderresponsivo_imagen', 'id_image = '.(int)$id_image);
                         }
                     } else {
                         $output .= $this->displayError($this->l('Error al guardar la nueva imagen'));
-                        
+
                         // Eliminar archivos si hubo error
                         @unlink($upload_dir.$desktop_filename);
                         @unlink($upload_dir.$mobile_filename);
@@ -607,9 +728,20 @@ class SliderResponsivo extends Module implements WidgetInterface
                 }
             }
         }
-        
+
         // Cambiar estado de imagen - CORREGIDO
         if (Tools::isSubmit('changeImageStatus')) {
+            if (!$this->isValidToken()) {
+                $output .= $this->displayError($this->l('Token de seguridad inválido.'));
+                if (Tools::getValue('ajax')) {
+                    die(json_encode([
+                        'success' => false,
+                        'message' => $this->l('Token de seguridad inválido.')
+                    ]));
+                }
+                return;
+            }
+
             $id_image = (int)Tools::getValue('id_image');
             if ($id_image > 0) {
                 try {
@@ -671,6 +803,11 @@ class SliderResponsivo extends Module implements WidgetInterface
        
        // Reordenar imágenes
        if (Tools::isSubmit('updatePositions')) {
+           if (!$this->isValidToken()) {
+               $output .= $this->displayError($this->l('Token de seguridad inválido.'));
+               return;
+           }
+
            $positions = Tools::getValue('image_position');
            if (is_array($positions)) {
                $success = true;
@@ -693,6 +830,145 @@ class SliderResponsivo extends Module implements WidgetInterface
    }
 
    /**
+    * Comprueba que el token de seguridad recibido coincide con el esperado.
+    * Se usa como defensa en profundidad además de la comprobación que ya
+    * realiza el controlador de administración.
+    */
+   protected function isValidToken()
+   {
+       return Tools::getValue('token') === Tools::getAdminTokenLite('AdminModules');
+   }
+
+   /**
+    * Crea un .htaccess que impide la ejecución de scripts en el directorio
+    * de subidas, como defensa en profundidad frente a archivos con una
+    * extensión inesperada.
+    */
+   protected function protectUploadDirectory($dir)
+   {
+       $htaccess = rtrim($dir, '/').'/.htaccess';
+       if (file_exists($htaccess)) {
+           return;
+       }
+
+       $content = "<FilesMatch \"\\.(php|php[0-9]?|phtml|pl|py|cgi|asp|sh|exe)$\">\n"
+           ."    Require all denied\n"
+           ."</FilesMatch>\n"
+           ."php_flag engine off\n";
+
+       file_put_contents($htaccess, $content);
+   }
+
+   /**
+    * Valida un archivo subido ($_FILES[...]) y devuelve la extensión segura
+    * correspondiente al tipo de imagen REALMENTE detectado (nunca la
+    * extensión indicada por el navegador/usuario), o false si no es una
+    * imagen válida o soportada.
+    */
+   protected function getValidatedUploadExtension($file)
+   {
+       if (!isset($file['tmp_name'], $file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+           return false;
+       }
+
+       if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+           return false;
+       }
+
+       if (!isset($file['size']) || (int)$file['size'] <= 0 || (int)$file['size'] > $this->max_upload_size) {
+           return false;
+       }
+
+       $image_info = @getimagesize($file['tmp_name']);
+       if (!$image_info) {
+           return false;
+       }
+
+       $allowed_extensions = [
+           IMAGETYPE_JPEG => 'jpg',
+           IMAGETYPE_PNG => 'png',
+           IMAGETYPE_GIF => 'gif',
+       ];
+       if (defined('IMAGETYPE_WEBP') && function_exists('imagecreatefromwebp')) {
+           $allowed_extensions[IMAGETYPE_WEBP] = 'webp';
+       }
+
+       if (!isset($allowed_extensions[$image_info[2]])) {
+           return false;
+       }
+
+       return $allowed_extensions[$image_info[2]];
+   }
+
+   /**
+    * Procesa las imágenes de escritorio/móvil específicas de un idioma (si
+    * se han subido o se ha pedido quitarlas) y devuelve los nombres de
+    * archivo a guardar en sliderresponsivo_imagen_lang. Cadena vacía
+    * significa "usar la imagen predeterminada".
+    */
+   protected function processLanguageImageOverrides($id_lang, $id_image, $current_desktop_image, $current_mobile_image, $upload_dir)
+   {
+       $desktop_image = (string)$current_desktop_image;
+       $mobile_image = (string)$current_mobile_image;
+
+       if (Tools::getValue('remove_desktop_image_'.$id_lang)) {
+           if ($desktop_image !== '' && file_exists($upload_dir.$desktop_image)) {
+               @unlink($upload_dir.$desktop_image);
+           }
+           $desktop_image = '';
+       }
+
+       if (Tools::getValue('remove_mobile_image_'.$id_lang)) {
+           if ($mobile_image !== '' && file_exists($upload_dir.$mobile_image)) {
+               @unlink($upload_dir.$mobile_image);
+           }
+           $mobile_image = '';
+       }
+
+       $desktop_key = 'desktop_image_'.$id_lang;
+       if (isset($_FILES[$desktop_key]) && !empty($_FILES[$desktop_key]['tmp_name'])) {
+           $ext = $this->getValidatedUploadExtension($_FILES[$desktop_key]);
+           if ($ext) {
+               $filename = 'desktop_lang'.(int)$id_lang.'_'.time().'_'.(int)$id_image.'.'.$ext;
+               if ($this->processUploadedImage(
+                   $_FILES[$desktop_key]['tmp_name'],
+                   $upload_dir.$filename,
+                   Configuration::get('SLIDERRESPONSIVO_WIDTH_DESKTOP'),
+                   Configuration::get('SLIDERRESPONSIVO_HEIGHT_DESKTOP'),
+                   Configuration::get('SLIDERRESPONSIVO_QUALITY')
+               )) {
+                   if ($desktop_image !== '' && file_exists($upload_dir.$desktop_image)) {
+                       @unlink($upload_dir.$desktop_image);
+                   }
+                   $desktop_image = $filename;
+               }
+           }
+       }
+
+       $mobile_key = 'mobile_image_'.$id_lang;
+       if (isset($_FILES[$mobile_key]) && !empty($_FILES[$mobile_key]['tmp_name'])) {
+           $ext = $this->getValidatedUploadExtension($_FILES[$mobile_key]);
+           if ($ext) {
+               $filename = 'mobile_lang'.(int)$id_lang.'_'.time().'_'.(int)$id_image.'.'.$ext;
+               if ($this->processUploadedImage(
+                   $_FILES[$mobile_key]['tmp_name'],
+                   $upload_dir.$filename,
+                   Configuration::get('SLIDERRESPONSIVO_WIDTH_MOBILE'),
+                   Configuration::get('SLIDERRESPONSIVO_HEIGHT_MOBILE'),
+                   Configuration::get('SLIDERRESPONSIVO_QUALITY')
+               )) {
+                   if ($mobile_image !== '' && file_exists($upload_dir.$mobile_image)) {
+                       @unlink($upload_dir.$mobile_image);
+                   }
+                   $mobile_image = $filename;
+               }
+           }
+       }
+
+       return [$desktop_image, $mobile_image];
+   }
+
+   /**
     * Procesar imagen subida con mejor preservación de proporciones
     */
    protected function processUploadedImage($source, $destination, $width, $height, $quality)
@@ -700,25 +976,33 @@ class SliderResponsivo extends Module implements WidgetInterface
        // Crear directorio si no existe
        $dir = dirname($destination);
        if (!is_dir($dir)) {
-           mkdir($dir, 0777, true);
+           mkdir($dir, 0755, true);
        }
-       
-       // Obtener información de la imagen
-       list($src_width, $src_height, $type) = getimagesize($source);
-       
+
+       // Obtener información de la imagen (ya validada previamente por
+       // getValidatedUploadExtension, pero se vuelve a comprobar aquí para
+       // que este método sea seguro también si se invoca de forma aislada)
+       $image_size = @getimagesize($source);
+       if (!$image_size) {
+           return false;
+       }
+       list($src_width, $src_height, $type) = $image_size;
+
        // Crear imagen según el formato
-       switch ($type) {
-           case IMAGETYPE_JPEG:
-               $src_img = imagecreatefromjpeg($source);
-               break;
-           case IMAGETYPE_PNG:
-               $src_img = imagecreatefrompng($source);
-               break;
-           case IMAGETYPE_GIF:
-               $src_img = imagecreatefromgif($source);
-               break;
-           default:
-               return false;
+       if ($type === IMAGETYPE_JPEG) {
+           $src_img = imagecreatefromjpeg($source);
+       } elseif ($type === IMAGETYPE_PNG) {
+           $src_img = imagecreatefrompng($source);
+       } elseif ($type === IMAGETYPE_GIF) {
+           $src_img = imagecreatefromgif($source);
+       } elseif (defined('IMAGETYPE_WEBP') && $type === IMAGETYPE_WEBP && function_exists('imagecreatefromwebp')) {
+           $src_img = imagecreatefromwebp($source);
+       } else {
+           return false;
+       }
+
+       if (!$src_img || $src_width <= 0 || $src_height <= 0) {
+           return false;
        }
        
        // Verificar si la imagen es cuadrada o casi cuadrada
@@ -774,20 +1058,18 @@ class SliderResponsivo extends Module implements WidgetInterface
        
        // Guardar imagen según formato
        $result = false;
-       switch ($type) {
-           case IMAGETYPE_JPEG:
-               $result = imagejpeg($dst_img, $destination, $quality);
-               break;
-           case IMAGETYPE_PNG:
-               // Convertir calidad de 0-100 a 0-9 para PNG
-               $png_quality = 9 - round(($quality / 100) * 9);
-               $result = imagepng($dst_img, $destination, $png_quality);
-               break;
-           case IMAGETYPE_GIF:
-               $result = imagegif($dst_img, $destination);
-               break;
+       if ($type === IMAGETYPE_JPEG) {
+           $result = imagejpeg($dst_img, $destination, $quality);
+       } elseif ($type === IMAGETYPE_PNG) {
+           // Convertir calidad de 0-100 a 0-9 para PNG
+           $png_quality = 9 - (int)round(($quality / 100) * 9);
+           $result = imagepng($dst_img, $destination, $png_quality);
+       } elseif ($type === IMAGETYPE_GIF) {
+           $result = imagegif($dst_img, $destination);
+       } elseif (defined('IMAGETYPE_WEBP') && $type === IMAGETYPE_WEBP && function_exists('imagewebp')) {
+           $result = imagewebp($dst_img, $destination, $quality);
        }
-       
+
        // Liberar memoria
        imagedestroy($src_img);
        imagedestroy($dst_img);

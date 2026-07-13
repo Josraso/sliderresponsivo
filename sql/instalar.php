@@ -48,6 +48,8 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'sliderresponsivo_imagen_lan
     `title` varchar(255) NOT NULL,
     `description` text DEFAULT NULL,
     `alt` varchar(255) DEFAULT NULL,
+    `desktop_image` varchar(255) DEFAULT NULL,
+    `mobile_image` varchar(255) DEFAULT NULL,
     PRIMARY KEY (`id_image`,`id_lang`)
 ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;';
 
