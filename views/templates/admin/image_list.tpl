@@ -162,167 +162,81 @@
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="panel">
-                                <div class="panel-heading">{l s='Imagen para escritorio' mod='sliderresponsivo'} <span class="text-danger">*</span></div>
-                                <div class="panel-body">
-                                    <div class="form-group">
-                                        <div class="dropzone">
-                                            <input type="file" name="desktop_image" id="desktop_image_input" class="image-upload" data-preview="desktop-preview" accept="image/*" />
-                                            <i class="icon icon-cloud-upload"></i>
-                                            <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
-                                            <p class="dropzone-info">{l s='Formato recomendado: JPG, PNG - Tamaño recomendado:' mod='sliderresponsivo'} {Configuration::get('SLIDERRESPONSIVO_WIDTH_DESKTOP')}x{Configuration::get('SLIDERRESPONSIVO_HEIGHT_DESKTOP')}px</p>
-                                        </div>
-                                        <div class="preview-box text-center" style="display: none;">
-                                            <div class="preview-title">{l s='Vista previa:' mod='sliderresponsivo'}</div>
-                                            <img id="desktop-preview" class="img-responsive img-thumbnail preview-image" src="" alt="" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="panel">
-                                <div class="panel-heading">{l s='Imagen para móvil' mod='sliderresponsivo'} <span class="text-danger">*</span></div>
-                                <div class="panel-body">
-                                    <div class="form-group">
-                                        <div class="dropzone">
-                                            <input type="file" name="mobile_image" id="mobile_image_input" class="image-upload" data-preview="mobile-preview" accept="image/*" />
-                                            <i class="icon icon-cloud-upload"></i>
-                                            <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
-                                            <p class="dropzone-info">{l s='Formato recomendado: JPG, PNG - Tamaño recomendado:' mod='sliderresponsivo'} {Configuration::get('SLIDERRESPONSIVO_WIDTH_MOBILE')}x{Configuration::get('SLIDERRESPONSIVO_HEIGHT_MOBILE')}px</p>
-                                        </div>
-                                        <div class="preview-box text-center" style="display: none;">
-                                            <div class="preview-title">{l s='Vista previa:' mod='sliderresponsivo'}</div>
-                                            <img id="mobile-preview" class="img-responsive img-thumbnail preview-image" src="" alt="" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="alert alert-info">
+                        {l s='Cada idioma tiene su propia imagen de escritorio, imagen de móvil y textos SEO. Solo es obligatorio completar un idioma; si dejas otro sin imagen, en la tienda se mostrará automáticamente el contenido del idioma que sí la tenga.' mod='sliderresponsivo'}
                     </div>
-                    
-                    <!-- Campos multilenguaje -->
-                    <div class="panel">
-                        <div class="panel-heading">{l s='Información SEO de la imagen' mod='sliderresponsivo'}</div>
-                        <div class="panel-body">
-                            <!-- Tabs para idiomas -->
-                            <div class="form-group">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <ul class="nav nav-tabs" role="tablist">
-                                            {foreach from=$languages item=language name=languages}
-                                                <li role="presentation" class="{if $language.id_lang == $default_lang}active{/if}">
-                                                    <a href="#lang-{$language.id_lang}" aria-controls="lang-{$language.id_lang}" role="tab" data-toggle="tab">
-                                                        <img src="../img/l/{$language.id_lang}.jpg" alt="{$language.name}" /> {$language.name}
-                                                    </a>
-                                                </li>
-                                            {/foreach}
-                                        </ul>
-                                        
-                                        <!-- Contenido para cada idioma -->
-                                        <div class="tab-content">
-                                            {foreach from=$languages item=language}
-                                                <div role="tabpanel" class="tab-pane {if $language.id_lang == $default_lang}active{/if}" id="lang-{$language.id_lang}">
-                                                    <div class="form-group">
-                                                        <label for="title_{$language.id_lang}">{l s='Título' mod='sliderresponsivo'} <span class="text-danger">*</span></label>
-                                                        <input type="text" name="title_{$language.id_lang}" id="title_{$language.id_lang}" class="form-control" required />
-                                                        <p class="help-block">{l s='Importante para SEO, no se muestra visiblemente sobre la imagen' mod='sliderresponsivo'}</p>
-                                                    </div>
 
-                                                    <div class="form-group">
-                                                        <label for="description_{$language.id_lang}">{l s='Descripción' mod='sliderresponsivo'}</label>
-                                                        <textarea name="description_{$language.id_lang}" id="description_{$language.id_lang}" class="form-control" rows="4"></textarea>
-                                                        <p class="help-block">{l s='Descripción para SEO, no visible en el front-office' mod='sliderresponsivo'}</p>
-                                                    </div>
+                    <!-- Pestañas de idioma: cada una con su imagen y sus textos -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        {foreach from=$languages item=language name=languages}
+                            <li role="presentation" class="{if $language.id_lang == $default_lang}active{/if}">
+                                <a href="#lang-{$language.id_lang}" aria-controls="lang-{$language.id_lang}" role="tab" data-toggle="tab">
+                                    <img src="../img/l/{$language.id_lang}.jpg" alt="{$language.name}" /> {$language.name}
+                                    <span class="lang-tab-status" data-lang="{$language.id_lang}"></span>
+                                </a>
+                            </li>
+                        {/foreach}
+                    </ul>
 
-                                                    <div class="form-group">
-                                                        <label for="alt_{$language.id_lang}">{l s='Texto alternativo (SEO)' mod='sliderresponsivo'}</label>
-                                                        <input type="text" name="alt_{$language.id_lang}" id="alt_{$language.id_lang}" class="form-control" />
-                                                        <p class="help-block">{l s='Texto alternativo para la imagen, importante para SEO y accesibilidad' mod='sliderresponsivo'}</p>
-                                                    </div>
-
-                                                    <div class="panel lang-image-override">
-                                                        <div class="panel-heading">
-                                                            {l s='Imágenes específicas para este idioma (opcional)' mod='sliderresponsivo'}
-                                                        </div>
-                                                        <div class="panel-body">
-                                                            <p class="help-block">{l s='Si no subes una imagen aquí, se usará la imagen predeterminada de escritorio/móvil configurada más arriba.' mod='sliderresponsivo'}</p>
-                                                            <div class="row">
-                                                                <div class="col-md-6">
-                                                                    <label>{l s='Escritorio' mod='sliderresponsivo'}</label>
-                                                                    <div class="dropzone lang-dropzone">
-                                                                        <input type="file" name="desktop_image_{$language.id_lang}" id="desktop_image_{$language.id_lang}" class="image-upload lang-image-upload" data-preview="desktop-preview-{$language.id_lang}" accept="image/*" />
-                                                                        <i class="icon icon-cloud-upload"></i>
-                                                                        <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
-                                                                    </div>
-                                                                    <div class="preview-box text-center lang-preview-box" data-lang="{$language.id_lang}" data-type="desktop" style="display: none;">
-                                                                        <img id="desktop-preview-{$language.id_lang}" class="img-responsive img-thumbnail preview-image" src="" alt="" />
-                                                                        <div>
-                                                                            <label class="remove-lang-image">
-                                                                                <input type="checkbox" name="remove_desktop_image_{$language.id_lang}" value="1" class="remove-lang-image-checkbox" />
-                                                                                {l s='Quitar y usar la predeterminada' mod='sliderresponsivo'}
-                                                                            </label>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label>{l s='Móvil' mod='sliderresponsivo'}</label>
-                                                                    <div class="dropzone lang-dropzone">
-                                                                        <input type="file" name="mobile_image_{$language.id_lang}" id="mobile_image_{$language.id_lang}" class="image-upload lang-image-upload" data-preview="mobile-preview-{$language.id_lang}" accept="image/*" />
-                                                                        <i class="icon icon-cloud-upload"></i>
-                                                                        <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
-                                                                    </div>
-                                                                    <div class="preview-box text-center lang-preview-box" data-lang="{$language.id_lang}" data-type="mobile" style="display: none;">
-                                                                        <img id="mobile-preview-{$language.id_lang}" class="img-responsive img-thumbnail preview-image" src="" alt="" />
-                                                                        <div>
-                                                                            <label class="remove-lang-image">
-                                                                                <input type="checkbox" name="remove_mobile_image_{$language.id_lang}" value="1" class="remove-lang-image-checkbox" />
-                                                                                {l s='Quitar y usar la predeterminada' mod='sliderresponsivo'}
-                                                                            </label>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            {/foreach}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Vista previa en tiempo real -->
-                    <div class="panel">
-                        <div class="panel-heading">{l s='Vista previa en tiempo real' mod='sliderresponsivo'}</div>
-                        <div class="panel-body">
-                            <div class="live-preview">
-                                <div class="live-preview-title"></div>
+                    <div class="tab-content">
+                        {foreach from=$languages item=language}
+                            <div role="tabpanel" class="tab-pane {if $language.id_lang == $default_lang}active{/if}" id="lang-{$language.id_lang}">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <h4 class="text-center">{l s='Escritorio' mod='sliderresponsivo'}</h4>
-                                        <div class="live-preview-desktop" style="display: none;">
-                                            <div class="live-preview-container">
-                                                <img src="" class="img-responsive" alt="" />
+                                        <label>{l s='Imagen de escritorio' mod='sliderresponsivo'}</label>
+                                        <div class="dropzone lang-dropzone">
+                                            <input type="file" name="desktop_image_{$language.id_lang}" id="desktop_image_{$language.id_lang}" class="image-upload lang-image-upload" data-preview="desktop-preview-{$language.id_lang}" accept="image/*" />
+                                            <i class="icon icon-cloud-upload"></i>
+                                            <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
+                                            <p class="dropzone-info">{l s='Tamaño recomendado:' mod='sliderresponsivo'} {Configuration::get('SLIDERRESPONSIVO_WIDTH_DESKTOP')}x{Configuration::get('SLIDERRESPONSIVO_HEIGHT_DESKTOP')}px</p>
+                                        </div>
+                                        <div class="preview-box text-center lang-preview-box" data-lang="{$language.id_lang}" data-type="desktop" style="display: none;">
+                                            <img id="desktop-preview-{$language.id_lang}" class="img-responsive img-thumbnail preview-image" src="" alt="" />
+                                            <div>
+                                                <label class="remove-lang-image">
+                                                    <input type="checkbox" name="remove_desktop_image_{$language.id_lang}" value="1" class="remove-lang-image-checkbox" />
+                                                    {l s='Quitar imagen de este idioma' mod='sliderresponsivo'}
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <h4 class="text-center">{l s='Móvil' mod='sliderresponsivo'}</h4>
-                                        <div class="live-preview-mobile" style="display: none;">
-                                            <div class="live-preview-container">
-                                                <img src="" class="img-responsive" alt="" />
+                                        <label>{l s='Imagen de móvil' mod='sliderresponsivo'}</label>
+                                        <div class="dropzone lang-dropzone">
+                                            <input type="file" name="mobile_image_{$language.id_lang}" id="mobile_image_{$language.id_lang}" class="image-upload lang-image-upload" data-preview="mobile-preview-{$language.id_lang}" accept="image/*" />
+                                            <i class="icon icon-cloud-upload"></i>
+                                            <p class="dropzone-message">{l s='Arrastra tu imagen aquí o haz clic para seleccionar' mod='sliderresponsivo'}</p>
+                                            <p class="dropzone-info">{l s='Tamaño recomendado:' mod='sliderresponsivo'} {Configuration::get('SLIDERRESPONSIVO_WIDTH_MOBILE')}x{Configuration::get('SLIDERRESPONSIVO_HEIGHT_MOBILE')}px</p>
+                                        </div>
+                                        <div class="preview-box text-center lang-preview-box" data-lang="{$language.id_lang}" data-type="mobile" style="display: none;">
+                                            <img id="mobile-preview-{$language.id_lang}" class="img-responsive img-thumbnail preview-image" src="" alt="" />
+                                            <div>
+                                                <label class="remove-lang-image">
+                                                    <input type="checkbox" name="remove_mobile_image_{$language.id_lang}" value="1" class="remove-lang-image-checkbox" />
+                                                    {l s='Quitar imagen de este idioma' mod='sliderresponsivo'}
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="form-group">
+                                    <label for="title_{$language.id_lang}">{l s='Título (SEO)' mod='sliderresponsivo'}</label>
+                                    <input type="text" name="title_{$language.id_lang}" id="title_{$language.id_lang}" class="form-control" />
+                                    <p class="help-block">{l s='Obligatorio solo si este idioma tiene imagen propia. No se muestra visiblemente sobre la imagen.' mod='sliderresponsivo'}</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="description_{$language.id_lang}">{l s='Descripción (SEO)' mod='sliderresponsivo'}</label>
+                                    <textarea name="description_{$language.id_lang}" id="description_{$language.id_lang}" class="form-control" rows="3"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="alt_{$language.id_lang}">{l s='Texto alternativo (SEO)' mod='sliderresponsivo'}</label>
+                                    <input type="text" name="alt_{$language.id_lang}" id="alt_{$language.id_lang}" class="form-control" />
+                                </div>
                             </div>
-                        </div>
+                        {/foreach}
                     </div>
                 </div>
                 

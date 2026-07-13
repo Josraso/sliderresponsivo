@@ -32,8 +32,6 @@ $sql = [];
 
 $sql[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'sliderresponsivo_imagen` (
     `id_image` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `desktop_image` varchar(255) NOT NULL,
-    `mobile_image` varchar(255) NOT NULL,
     `url` varchar(255) DEFAULT NULL,
     `position` int(10) UNSIGNED NOT NULL DEFAULT 0,
     `active` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
@@ -42,10 +40,13 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'sliderresponsivo_imagen` (
     PRIMARY KEY (`id_image`)
 ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;';
 
+// Las imágenes y sus textos SEO viven únicamente por idioma. Si un idioma
+// no tiene imagen propia, en el front se usa la de otro idioma que sí la
+// tenga (ver SliderResponsivo_SliderResponsivoModelo).
 $sql[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'sliderresponsivo_imagen_lang` (
     `id_image` int(10) UNSIGNED NOT NULL,
     `id_lang` int(10) UNSIGNED NOT NULL,
-    `title` varchar(255) NOT NULL,
+    `title` varchar(255) DEFAULT NULL,
     `description` text DEFAULT NULL,
     `alt` varchar(255) DEFAULT NULL,
     `desktop_image` varchar(255) DEFAULT NULL,

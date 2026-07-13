@@ -24,10 +24,10 @@ $(document).ready(function() {
     initializeSortable();
     initializeImagePreview();
     initializeDropzone();
-    initializeLanguageTabs();
     initializeFormHandling();
     initializeTooltips();
     initializeRemoveLangImage();
+    updateLangTabStatus();
 });
 
 /**
@@ -121,7 +121,7 @@ function updatePositions() {
 }
 
 /**
- * Inicializa la previsualización de imágenes (imágenes predeterminadas y las específicas por idioma)
+ * Inicializa la previsualización de imágenes por idioma
  */
 function initializeImagePreview() {
     $(document).on('change', '.image-upload', function() {
@@ -137,36 +137,14 @@ function initializeImagePreview() {
                 preview.attr('src', e.target.result);
                 previewBox.fadeIn(300);
                 previewBox.find('.remove-lang-image-checkbox').prop('checked', false);
+                previewBox.find('.preview-image').css('opacity', 1);
 
-                updateLivePreview();
+                updateLangTabStatus();
             };
 
             reader.readAsDataURL(input.files[0]);
         }
     });
-}
-
-/**
- * Actualiza la vista previa en tiempo real
- */
-function updateLivePreview() {
-    if ($('.live-preview-container').length) {
-        const title = $('#title_' + sliderResponsivoAdmin.defaultLangId).val() || 'Vista previa';
-        const desktopSrc = $('#desktop-preview').attr('src');
-        const mobileSrc = $('#mobile-preview').attr('src');
-
-        $('.live-preview-title').text(title);
-
-        if (desktopSrc) {
-            $('.live-preview-desktop img').attr('src', desktopSrc);
-            $('.live-preview-desktop').show();
-        }
-
-        if (mobileSrc) {
-            $('.live-preview-mobile img').attr('src', mobileSrc);
-            $('.live-preview-mobile').show();
-        }
-    }
 }
 
 /**
@@ -200,16 +178,26 @@ function initializeDropzone() {
 }
 
 /**
- * Inicializa las pestañas de idiomas
+ * Marca en cada pestaña de idioma si ya tiene imagen completa (escritorio + móvil)
  */
-function initializeLanguageTabs() {
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function() {
-        updateLivePreview();
+function updateLangTabStatus() {
+    $('.lang-tab-status').each(function() {
+        const langId = $(this).data('lang');
+        const hasDesktop = $('.lang-preview-box[data-lang="' + langId + '"][data-type="desktop"]').is(':visible')
+            && !$('.lang-preview-box[data-lang="' + langId + '"][data-type="desktop"] .remove-lang-image-checkbox').is(':checked');
+        const hasMobile = $('.lang-preview-box[data-lang="' + langId + '"][data-type="mobile"]').is(':visible')
+            && !$('.lang-preview-box[data-lang="' + langId + '"][data-type="mobile"] .remove-lang-image-checkbox').is(':checked');
+
+        if (hasDesktop && hasMobile) {
+            $(this).html(' <i class="icon-check" style="color:#5cb85c;"></i>');
+        } else {
+            $(this).html('');
+        }
     });
 }
 
 /**
- * Permite quitar una imagen específica de idioma y volver a la predeterminada
+ * Permite quitar la imagen de un idioma concreto
  */
 function initializeRemoveLangImage() {
     $(document).on('change', '.remove-lang-image-checkbox', function() {
@@ -219,6 +207,7 @@ function initializeRemoveLangImage() {
         } else {
             $box.find('.preview-image').css('opacity', 1);
         }
+        updateLangTabStatus();
     });
 }
 
@@ -248,7 +237,6 @@ function initializeFormHandling() {
 
                 if (response.success) {
                     fillImageForm(response.image);
-                    updateLivePreview();
                 } else {
                     showErrorMessage(sliderResponsivoAdmin.i18n.loadError || 'Error al cargar la imagen');
                     $('#slider-image-list').fadeIn(300);
@@ -339,10 +327,6 @@ function initializeFormHandling() {
             }
         });
     });
-
-    $(document).on('input', '.slider-image-form input[type="text"], .slider-image-form textarea', function() {
-        updateLivePreview();
-    });
 }
 
 /**
@@ -369,8 +353,8 @@ function resetForm() {
     $('#id_image').val(0);
     $('.preview-image').attr('src', '').css('opacity', 1);
     $('.preview-box').hide();
-    $('.live-preview-desktop, .live-preview-mobile').hide();
     $('.remove-lang-image-checkbox').prop('checked', false);
+    updateLangTabStatus();
 }
 
 /**
@@ -380,14 +364,6 @@ function fillImageForm(image) {
     $('#id_image').val(image.id_image);
     $('#image-url').val(image.url);
     $('#image-active').prop('checked', image.active == 1);
-
-    if (image.desktop_image) {
-        $('#desktop-preview').attr('src', image.desktop_url).closest('.preview-box').show();
-    }
-
-    if (image.mobile_image) {
-        $('#mobile-preview').attr('src', image.mobile_url).closest('.preview-box').show();
-    }
 
     for (const langId in image.languages) {
         if (!image.languages.hasOwnProperty(langId)) {
@@ -407,6 +383,8 @@ function fillImageForm(image) {
             $('#mobile-preview-' + langId).attr('src', data.mobile_url).closest('.preview-box').show();
         }
     }
+
+    updateLangTabStatus();
 }
 
 /**

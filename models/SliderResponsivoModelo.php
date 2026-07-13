@@ -17,95 +17,136 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * Modelo para gestionar el slider completo
+ * Modelo para gestionar el slider completo.
+ *
+ * Las imágenes (y su título/descripción/alt) se guardan únicamente por
+ * idioma. Si el idioma solicitado no tiene imagen propia, se usa la de
+ * cualquier otro idioma que sí la tenga (priorizando el idioma por
+ * defecto de la tienda), junto con su título/descripción/alt.
  */
 class SliderResponsivo_SliderResponsivoModelo
 {
     /**
-     * Columnas comunes seleccionadas para las imágenes del slider.
-     * Las imágenes de i.* actúan como imagen por defecto y las de il.*
-     * como sobrescritura opcional para el idioma solicitado.
-     */
-    protected function getImageSelect()
-    {
-        return 'i.id_image, i.url, i.position, i.active, i.date_add, i.date_upd, '
-            .'i.desktop_image AS default_desktop_image, i.mobile_image AS default_mobile_image, '
-            .'il.id_lang, il.title, il.description, il.alt, '
-            .'il.desktop_image AS lang_desktop_image, il.mobile_image AS lang_mobile_image';
-    }
-
-    /**
-     * Resuelve la imagen efectiva (específica del idioma si existe, si no la predeterminada)
-     * para una fila o un array de filas devueltas por getImageSelect().
-     */
-    protected function resolveLocalizedImages($rows)
-    {
-        if (empty($rows)) {
-            return $rows;
-        }
-
-        $is_single = !isset($rows[0]) || !is_array($rows[0]);
-        $items = $is_single ? [$rows] : $rows;
-
-        foreach ($items as &$row) {
-            $row['desktop_image'] = !empty($row['lang_desktop_image']) ? $row['lang_desktop_image'] : $row['default_desktop_image'];
-            $row['mobile_image'] = !empty($row['lang_mobile_image']) ? $row['lang_mobile_image'] : $row['default_mobile_image'];
-        }
-        unset($row);
-
-        return $is_single ? $items[0] : $items;
-    }
-
-    /**
-     * Obtiene todas las imágenes activas ordenadas por posición
+     * Obtiene todas las imágenes activas ordenadas por posición, con el
+     * contenido (imagen + textos) resuelto para el idioma actual del front.
      */
     public function getActiveImages()
     {
-        $query = new DbQuery();
-        $query->select($this->getImageSelect());
-        $query->from('sliderresponsivo_imagen', 'i');
-        $query->innerJoin('sliderresponsivo_imagen_lang', 'il', 'i.id_image = il.id_image');
-        $query->where('i.active = 1');
-        $query->where('il.id_lang = '.(int)Context::getContext()->language->id);
-        $query->orderBy('i.position ASC');
-
-        $result = Db::getInstance()->executeS($query);
-
-        return $result ? $this->resolveLocalizedImages($result) : [];
+        return $this->getImagesWithFallback(true, Context::getContext()->language->id);
     }
 
     /**
-     * Obtiene todas las imágenes (activas e inactivas) para administración
+     * Obtiene todas las imágenes (activas e inactivas) para administración,
+     * con el contenido resuelto para el idioma actual del back office.
      */
     public function getAllImages()
     {
-        $query = new DbQuery();
-        $query->select($this->getImageSelect());
-        $query->from('sliderresponsivo_imagen', 'i');
-        $query->innerJoin('sliderresponsivo_imagen_lang', 'il', 'i.id_image = il.id_image');
-        $query->where('il.id_lang = '.(int)Context::getContext()->language->id);
-        $query->orderBy('i.position ASC');
-
-        $result = Db::getInstance()->executeS($query);
-
-        return $result ? $this->resolveLocalizedImages($result) : [];
+        return $this->getImagesWithFallback(false, Context::getContext()->language->id);
     }
 
     /**
-     * Obtiene una imagen por su ID
+     * Obtiene una imagen por su ID con el contenido resuelto para el idioma indicado.
      */
-    public function getImageById($id_image)
+    public function getImageById($id_image, $id_lang = null)
     {
+        $images = $this->getImagesWithFallback(false, $id_lang, (int)$id_image);
+
+        return !empty($images) ? $images[0] : false;
+    }
+
+    /**
+     * Núcleo de la resolución de imágenes: obtiene las filas base y, para
+     * cada una, decide qué imagen/texto mostrar para el idioma solicitado.
+     */
+    protected function getImagesWithFallback($only_active, $id_lang = null, $only_id_image = null)
+    {
+        $id_lang = $id_lang !== null ? (int)$id_lang : (int)Context::getContext()->language->id;
+        $default_id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+
         $query = new DbQuery();
-        $query->select($this->getImageSelect());
-        $query->from('sliderresponsivo_imagen', 'i');
-        $query->innerJoin('sliderresponsivo_imagen_lang', 'il', 'i.id_image = il.id_image');
-        $query->where('i.id_image = '.(int)$id_image);
-        $query->where('il.id_lang = '.(int)Context::getContext()->language->id);
+        $query->select('id_image, url, position, active, date_add, date_upd');
+        $query->from('sliderresponsivo_imagen');
+        if ($only_active) {
+            $query->where('active = 1');
+        }
+        if ($only_id_image !== null) {
+            $query->where('id_image = '.(int)$only_id_image);
+        }
+        $query->orderBy('position ASC');
 
-        $result = Db::getInstance()->getRow($query);
+        $images = Db::getInstance()->executeS($query);
+        if (empty($images)) {
+            return [];
+        }
 
-        return $result ? $this->resolveLocalizedImages($result) : false;
+        $ids = [];
+        foreach ($images as $image) {
+            $ids[] = (int)$image['id_image'];
+        }
+
+        $lang_query = new DbQuery();
+        $lang_query->select('id_image, id_lang, title, description, alt, desktop_image, mobile_image');
+        $lang_query->from('sliderresponsivo_imagen_lang');
+        $lang_query->where('id_image IN ('.implode(',', $ids).')');
+        $lang_rows = Db::getInstance()->executeS($lang_query);
+
+        $rows_by_image = [];
+        foreach ($lang_rows as $row) {
+            $rows_by_image[(int)$row['id_image']][(int)$row['id_lang']] = $row;
+        }
+
+        $result = [];
+        foreach ($images as $image) {
+            $id_image = (int)$image['id_image'];
+            $rows = isset($rows_by_image[$id_image]) ? $rows_by_image[$id_image] : [];
+
+            $content = $this->pickLanguageContent($rows, $id_lang, $default_id_lang);
+            if ($content === null) {
+                // Ningún idioma tiene imagen para esta entrada: no se puede mostrar.
+                continue;
+            }
+
+            $result[] = array_merge($image, [
+                'title' => $content['title'],
+                'description' => $content['description'],
+                'alt' => $content['alt'],
+                'desktop_image' => $content['desktop_image'],
+                'mobile_image' => $content['mobile_image'],
+            ]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * De entre las filas de idioma de una imagen, elige cuál usar:
+     * 1. La del idioma solicitado, si tiene imagen propia.
+     * 2. Si no, la del idioma por defecto de la tienda, si tiene imagen.
+     * 3. Si no, la primera fila (cualquier idioma) que tenga imagen.
+     * Devuelve null si ningún idioma tiene imagen.
+     */
+    protected function pickLanguageContent(array $rows, $id_lang, $default_id_lang)
+    {
+        if (isset($rows[$id_lang]) && $this->rowHasImage($rows[$id_lang])) {
+            return $rows[$id_lang];
+        }
+
+        if (isset($rows[$default_id_lang]) && $this->rowHasImage($rows[$default_id_lang])) {
+            return $rows[$default_id_lang];
+        }
+
+        foreach ($rows as $row) {
+            if ($this->rowHasImage($row)) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    protected function rowHasImage($row)
+    {
+        return !empty($row['desktop_image']) && !empty($row['mobile_image']);
     }
 
     /**
@@ -157,23 +198,6 @@ class SliderResponsivo_SliderResponsivoModelo
             ['active' => (int)$active],
             'id_image = '.(int)$id_image
         );
-    }
-
-    /**
-     * Obtiene todas las imágenes para un idioma específico
-     */
-    public function getImagesForLanguage($id_lang)
-    {
-        $query = new DbQuery();
-        $query->select($this->getImageSelect());
-        $query->from('sliderresponsivo_imagen', 'i');
-        $query->innerJoin('sliderresponsivo_imagen_lang', 'il', 'i.id_image = il.id_image');
-        $query->where('il.id_lang = '.(int)$id_lang);
-        $query->orderBy('i.position ASC');
-
-        $result = Db::getInstance()->executeS($query);
-
-        return $result ? $this->resolveLocalizedImages($result) : [];
     }
 
     /**

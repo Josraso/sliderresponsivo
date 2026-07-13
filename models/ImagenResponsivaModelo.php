@@ -22,35 +22,39 @@ if (!defined('_PS_VERSION_')) {
 class SliderResponsivo_ImagenResponsivaModelo extends ObjectModel
 {
     public $id_image;
-    public $desktop_image;
-    public $mobile_image;
     public $url;
-    public $title;
-    public $description;
-    public $alt;
     public $position;
     public $active;
     public $date_add;
     public $date_upd;
-    
+    public $desktop_image;
+    public $mobile_image;
+    public $title;
+    public $description;
+    public $alt;
+
     /**
      * @see ObjectModel::$definition
+     *
+     * La imagen (escritorio/móvil) y los textos SEO son por idioma: si un
+     * idioma no tiene imagen propia, el front usa la de otro idioma que sí
+     * la tenga (ver SliderResponsivo_SliderResponsivoModelo).
      */
     public static $definition = [
         'table' => 'sliderresponsivo_imagen',
         'primary' => 'id_image',
         'multilang' => true,
         'fields' => [
-            'desktop_image' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 255],
-            'mobile_image' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 255],
             'url' => ['type' => self::TYPE_STRING, 'validate' => 'isUrl', 'size' => 255],
             'position' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'],
             'active' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
             'date_add' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
             'date_upd' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
-            
+
             // Campos multilenguaje
-            'title' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 255],
+            'desktop_image' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255],
+            'mobile_image' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255],
+            'title' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255],
             'description' => ['type' => self::TYPE_HTML, 'lang' => true, 'validate' => 'isCleanHtml', 'size' => 4000],
             'alt' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255],
         ],

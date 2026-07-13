@@ -409,28 +409,6 @@
     margin-right: 5px;
 }
 
-/* Vista previa en tiempo real */
-.live-preview {
-    border: 1px solid #dbe6e9;
-    border-radius: 4px;
-    padding: 15px;
-    margin-top: 20px;
-    background-color: #f5f8f9;
-}
-
-.live-preview-title {
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 15px;
-    color: #363a41;
-}
-
-.live-preview-container {
-    border-radius: 4px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
 /* Responsive */
 @media (max-width: 992px) {
     .slider-image-list th,
@@ -555,6 +533,11 @@
 .lang-preview-box .preview-image {
     max-height: 100px;
     transition: opacity 0.2s ease;
+}
+
+.lang-tab-status {
+    display: inline-block;
+    margin-left: 4px;
 }
 
 .remove-lang-image {
