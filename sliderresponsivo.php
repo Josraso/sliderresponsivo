@@ -36,7 +36,7 @@ class SliderResponsivo extends Module implements WidgetInterface
     {
         $this->name = 'sliderresponsivo';
         $this->tab = 'front_office_features';
-        $this->version = '1.2.0';
+        $this->version = '1.2.1';
         $this->author = 'PrestaShop';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -717,19 +717,31 @@ class SliderResponsivo extends Module implements WidgetInterface
    /**
     * Crea un .htaccess que impide la ejecución de scripts en el directorio
     * de subidas, como defensa en profundidad frente a archivos con una
-    * extensión inesperada.
+    * extensión inesperada. Usa únicamente directivas de Apache (no
+    * "php_flag"/"php_value", que requieren mod_php y provocan un error 500
+    * en cualquier archivo del directorio -incluidas las imágenes- cuando
+    * el hosting usa PHP-FPM/CGI, como ocurre en muchos proveedores).
     */
    protected function protectUploadDirectory($dir)
    {
        $htaccess = rtrim($dir, '/').'/.htaccess';
-       if (file_exists($htaccess)) {
-           return;
-       }
-
        $content = "<FilesMatch \"\\.(php|php[0-9]?|phtml|pl|py|cgi|asp|sh|exe)$\">\n"
-           ."    Require all denied\n"
-           ."</FilesMatch>\n"
-           ."php_flag engine off\n";
+           ."    <IfModule mod_authz_core.c>\n"
+           ."        Require all denied\n"
+           ."    </IfModule>\n"
+           ."    <IfModule !mod_authz_core.c>\n"
+           ."        Order allow,deny\n"
+           ."        Deny from all\n"
+           ."    </IfModule>\n"
+           ."</FilesMatch>\n";
+
+       if (file_exists($htaccess)) {
+           // Reescribir solo si es la versión antigua y problemática
+           // (con "php_flag"), para autorreparar instalaciones existentes.
+           if (strpos((string)file_get_contents($htaccess), 'php_flag') === false) {
+               return;
+           }
+       }
 
        file_put_contents($htaccess, $content);
    }

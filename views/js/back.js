@@ -232,10 +232,9 @@ function initializeFormHandling() {
             url: sliderResponsivoAdmin.currentUrl + '&action=getImage&id_image=' + imageId + '&token=' + sliderResponsivoAdmin.token,
             method: 'GET',
             dataType: 'json',
+            timeout: 20000,
             success: function(response) {
-                hideLoadingMessage();
-
-                if (response.success) {
+                if (response && response.success) {
                     fillImageForm(response.image);
                 } else {
                     showErrorMessage(sliderResponsivoAdmin.i18n.loadError || 'Error al cargar la imagen');
@@ -244,10 +243,14 @@ function initializeFormHandling() {
                 }
             },
             error: function() {
-                hideLoadingMessage();
                 showErrorMessage(sliderResponsivoAdmin.i18n.loadError || 'Error al cargar la imagen');
                 $('#slider-image-list').fadeIn(300);
                 $('#slider-image-form').hide();
+            },
+            complete: function() {
+                // Se ejecuta siempre (éxito, error o timeout) para no dejar
+                // el spinner de carga colgado si algo falla de forma inesperada.
+                hideLoadingMessage();
             }
         });
     });
@@ -409,12 +412,20 @@ function hideLoadingMessage() {
  * Muestra un mensaje de éxito
  */
 function showSuccessMessage(message) {
-    $.growl.notice({ title: '', message: message });
+    if (typeof $.growl !== 'undefined') {
+        $.growl.notice({ title: '', message: message });
+    } else {
+        console.log(message);
+    }
 }
 
 /**
  * Muestra un mensaje de error
  */
 function showErrorMessage(message) {
-    $.growl.error({ title: '', message: message });
+    if (typeof $.growl !== 'undefined') {
+        $.growl.error({ title: '', message: message });
+    } else {
+        alert(message);
+    }
 }
