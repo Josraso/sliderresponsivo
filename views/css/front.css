@@ -22,6 +22,21 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Ancho completo de pantalla: rompe el contenedor centrado del tema sin
+   necesidad de tocar su plantilla. Requiere que ningún ancestro tenga
+   overflow-x:hidden que recorte el contenido (la mayoría de temas no lo
+   hacen en el body). */
+.slider-responsivo-full-width {
+    width: 100vw;
+    max-width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    border-radius: 0;
+}
+
 /* Contenedor de slides */
 .slider-responsivo .slides-container {
     position: relative;

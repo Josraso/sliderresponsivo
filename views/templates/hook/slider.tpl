@@ -12,7 +12,7 @@
 *}
 
 {if isset($images) && count($images) > 0}
-<div class="slider-responsivo" data-effect="{$effect|escape:'html':'UTF-8'}" data-autoplay="{$autoplay|intval}" data-autoplay-speed="{$autoplay_speed|intval}">
+<div class="slider-responsivo{if $full_width} slider-responsivo-full-width{/if}" data-effect="{$effect|escape:'html':'UTF-8'}" data-autoplay="{$autoplay|intval}" data-autoplay-speed="{$autoplay_speed|intval}">
     <div class="slides-container">
         {foreach from=$images item=image name=slides}
             <div class="slide{if $smarty.foreach.slides.first} active{/if}" aria-hidden="{if $smarty.foreach.slides.first}false{else}true{/if}" data-slide-index="{$smarty.foreach.slides.index}">

@@ -36,7 +36,7 @@ class SliderResponsivo extends Module implements WidgetInterface
     {
         $this->name = 'sliderresponsivo';
         $this->tab = 'front_office_features';
-        $this->version = '1.2.2';
+        $this->version = '1.3.0';
         $this->author = 'PrestaShop';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -74,6 +74,7 @@ class SliderResponsivo extends Module implements WidgetInterface
         Configuration::updateValue('SLIDERRESPONSIVO_EFFECT', $this->default_effect);
         Configuration::updateValue('SLIDERRESPONSIVO_AUTOPLAY', 1);
         Configuration::updateValue('SLIDERRESPONSIVO_AUTOPLAY_SPEED', 5000);
+        Configuration::updateValue('SLIDERRESPONSIVO_FULL_WIDTH', 0);
 
         // Crear carpeta de imágenes si no existe
         $img_dir = _PS_MODULE_DIR_.$this->name.'/views/img/';
@@ -123,6 +124,7 @@ class SliderResponsivo extends Module implements WidgetInterface
         Configuration::deleteByName('SLIDERRESPONSIVO_EFFECT');
         Configuration::deleteByName('SLIDERRESPONSIVO_AUTOPLAY');
         Configuration::deleteByName('SLIDERRESPONSIVO_AUTOPLAY_SPEED');
+        Configuration::deleteByName('SLIDERRESPONSIVO_FULL_WIDTH');
 
         return parent::uninstall();
     }
@@ -211,7 +213,8 @@ class SliderResponsivo extends Module implements WidgetInterface
             'effect' => Configuration::get('SLIDERRESPONSIVO_EFFECT'),
             'img_url' => $this->_path.'views/img/',
             'autoplay' => (int)Configuration::get('SLIDERRESPONSIVO_AUTOPLAY'),
-            'autoplay_speed' => (int)Configuration::get('SLIDERRESPONSIVO_AUTOPLAY_SPEED')
+            'autoplay_speed' => (int)Configuration::get('SLIDERRESPONSIVO_AUTOPLAY_SPEED'),
+            'full_width' => (bool)Configuration::get('SLIDERRESPONSIVO_FULL_WIDTH')
         ]);
         
         return $this->fetch('module:sliderresponsivo/views/templates/hook/slider.tpl');
@@ -288,7 +291,7 @@ class SliderResponsivo extends Module implements WidgetInterface
         }
 
         // AJAX: Obtener información de imagen para editar
-        if (Tools::isSubmit('action') && Tools::getValue('action') == 'getImage') {
+        if (Tools::isSubmit('getSliderImage')) {
             $id_image = (int)Tools::getValue('id_image');
             if ($id_image > 0) {
                 // Obtener datos de la imagen directamente con SQL
@@ -342,6 +345,7 @@ class SliderResponsivo extends Module implements WidgetInterface
             $effect = Tools::getValue('SLIDERRESPONSIVO_EFFECT');
             $autoplay = (int)Tools::getValue('SLIDERRESPONSIVO_AUTOPLAY');
             $autoplay_speed = (int)Tools::getValue('SLIDERRESPONSIVO_AUTOPLAY_SPEED');
+            $full_width = (int)Tools::getValue('SLIDERRESPONSIVO_FULL_WIDTH');
 
             // Validaciones
             $errors = [];
@@ -377,7 +381,8 @@ class SliderResponsivo extends Module implements WidgetInterface
                 Configuration::updateValue('SLIDERRESPONSIVO_EFFECT', $effect);
                 Configuration::updateValue('SLIDERRESPONSIVO_AUTOPLAY', $autoplay);
                 Configuration::updateValue('SLIDERRESPONSIVO_AUTOPLAY_SPEED', $autoplay_speed);
-                
+                Configuration::updateValue('SLIDERRESPONSIVO_FULL_WIDTH', $full_width);
+
                 $output .= $this->displayConfirmation($this->l('Configuración actualizada'));
             } else {
                 foreach ($errors as $error) {
@@ -401,6 +406,7 @@ class SliderResponsivo extends Module implements WidgetInterface
             'SLIDERRESPONSIVO_EFFECT' => Configuration::get('SLIDERRESPONSIVO_EFFECT', null, null, null, $this->default_effect),
             'SLIDERRESPONSIVO_AUTOPLAY' => Configuration::get('SLIDERRESPONSIVO_AUTOPLAY', null, null, null, 1),
             'SLIDERRESPONSIVO_AUTOPLAY_SPEED' => Configuration::get('SLIDERRESPONSIVO_AUTOPLAY_SPEED', null, null, null, 5000),
+            'SLIDERRESPONSIVO_FULL_WIDTH' => Configuration::get('SLIDERRESPONSIVO_FULL_WIDTH', null, null, null, 0),
         ]);
         
         // Renderizar plantilla personalizada para configuración

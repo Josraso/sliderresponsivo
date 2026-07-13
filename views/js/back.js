@@ -196,8 +196,8 @@ function initializeFormHandling() {
         showLoadingMessage(sliderResponsivoAdmin.i18n.loading || 'Cargando datos de la imagen...');
 
         $.ajax({
-            url: sliderResponsivoAdmin.currentUrl + '&action=getImage&id_image=' + imageId,
-            method: 'GET',
+            url: sliderResponsivoAdmin.currentUrl + '&getSliderImage=1&id_image=' + imageId + '&ajax=1',
+            method: 'POST',
             dataType: 'json',
             timeout: 20000,
             success: function(response) {
@@ -209,8 +209,13 @@ function initializeFormHandling() {
                     $('#slider-image-form').hide();
                 }
             },
-            error: function() {
-                showErrorMessage(sliderResponsivoAdmin.i18n.loadError || 'Error al cargar la imagen');
+            error: function(jqXHR, textStatus) {
+                // Mostramos el detalle real en consola: si vuelve a fallar,
+                // abre la consola del navegador (F12) para ver el motivo
+                // exacto (código HTTP, texto de respuesta) en vez de
+                // adivinarlo a ciegas.
+                console.error('SliderResponsivo: fallo al cargar la imagen', textStatus, jqXHR.status, jqXHR.responseText);
+                showErrorMessage((sliderResponsivoAdmin.i18n.loadError || 'Error al cargar la imagen') + ' (revisa la consola del navegador para más detalle)');
                 $('#slider-image-list').fadeIn(300);
                 $('#slider-image-form').hide();
             },

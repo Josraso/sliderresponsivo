@@ -116,6 +116,20 @@
                             <p class="help-block">{l s='Tiempo entre transiciones en milisegundos (1000ms = 1s)' mod='sliderresponsivo'}</p>
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label class="control-label col-lg-3">{l s='Ancho completo de pantalla' mod='sliderresponsivo'}</label>
+                        <div class="col-lg-9">
+                            <span class="switch prestashop-switch fixed-width-lg">
+                                <input type="radio" name="SLIDERRESPONSIVO_FULL_WIDTH" id="SLIDERRESPONSIVO_FULL_WIDTH_on" value="1" {if $SLIDERRESPONSIVO_FULL_WIDTH}checked="checked"{/if}>
+                                <label for="SLIDERRESPONSIVO_FULL_WIDTH_on">{l s='Sí' mod='sliderresponsivo'}</label>
+                                <input type="radio" name="SLIDERRESPONSIVO_FULL_WIDTH" id="SLIDERRESPONSIVO_FULL_WIDTH_off" value="0" {if !$SLIDERRESPONSIVO_FULL_WIDTH}checked="checked"{/if}>
+                                <label for="SLIDERRESPONSIVO_FULL_WIDTH_off">{l s='No' mod='sliderresponsivo'}</label>
+                                <a class="slide-button btn"></a>
+                            </span>
+                            <p class="help-block">{l s='El slider ocupa todo el ancho de la pantalla en vez de quedarse dentro del contenedor centrado de la plantilla. Si tu plantilla oculta el desbordamiento horizontal del body, es posible que no se vea completo.' mod='sliderresponsivo'}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -130,14 +144,15 @@
 
 <script type="text/javascript">
     $(document).ready(function() {
-        // Manejar el toggle del acordeón
-        $('.toggle-config').on('click', function(e) {
+        // Manejar el toggle del acordeón: clic en la flecha o en cualquier
+        // parte de la cabecera (incluido el título) lo despliega/oculta.
+        $('#configuration-panel .panel-heading').on('click', function(e) {
             e.preventDefault();
-            var $icon = $(this).find('i');
-            var $collapse = $('.config-collapse');
-            
+            var $icon = $(this).find('.toggle-config i');
+            var $collapse = $(this).closest('.panel').find('.config-collapse');
+
             $collapse.slideToggle(300, function() {
-                if ($(this).is(':visible')) {
+                if ($collapse.is(':visible')) {
                     $icon.removeClass('icon-caret-down').addClass('icon-caret-up');
                 } else {
                     $icon.removeClass('icon-caret-up').addClass('icon-caret-down');
